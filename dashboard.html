@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BreatheEasy+ | Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+--bg:#050d12;--card:#0f2535;--border:rgba(56,189,180,0.15);
+--teal:#38bdb4;--text:#e8f4f3;--muted:#7a9ea0;
+}
+body{background:var(--bg);font-family:'DM Sans';color:var(--text);padding:30px}
+.container{max-width:1200px;margin:auto}
+.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:30px}
+.title{font-family:'Syne';font-size:1.8rem}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:20px}
+.card{
+background:var(--card);
+border:1px solid var(--border);
+border-radius:16px;
+padding:20px;
+}
+.card h3{margin-bottom:10px;font-size:0.9rem;color:var(--muted)}
+.value{font-family:'Syne';font-size:1.4rem}
+.big{
+font-size:2rem;
+color:var(--teal);
+}
+.advisory{
+margin-top:10px;
+padding:10px;
+border-radius:10px;
+background:rgba(56,189,180,0.1);
+}
+.bar{
+display:flex;gap:10px;margin-top:10px}
+.bar div{
+flex:1;height:80px;background:var(--teal);
+border-radius:6px;display:flex;align-items:end;justify-content:center;font-size:0.7rem;color:#000
+}
+</style>
+</head>
+<body>
+    <a href="exposure.html" style="color:#38bdb4;">View Exposure History →</a>
+<div class="container">
+
+<div class="header">
+<h1 class="title">🌬️ BreatheEasy+ Dashboard</h1>
+</div>
+
+<div class="grid">
+
+<div class="card">
+<h3>User Info</h3>
+<div class="value">James | Asthma</div>
+<div class="value">Age: 20</div>
+<div class="value">VF: 1.5</div>
+</div>
+
+<div class="card">
+<h3>Live AQI</h3>
+<div class="value">PM2.5: 120</div>
+<div class="value">PM10: 180</div>
+<div class="value">NO₂: 60</div>
+<div class="value">O₃: 40</div>
+</div>
+
+<div class="card">
+<h3>Personal Risk (WES)</h3>
+<div class="value big">85</div>
+<div class="value">Exposure Load: 170</div>
+<div class="value">Status: High</div>
+</div>
+
+<div class="card">
+<h3>Advisory</h3>
+<div class="advisory">Avoid outdoor activity. If necessary, wear a mask and limit exposure to 20 minutes.</div>
+</div>
+
+</div>
+
+<div class="card" style="margin-top:20px">
+<h3>Pollutant Levels</h3>
+<div class="bar">
+<div style="height:60%">PM2.5</div>
+<div style="height:80%">PM10</div>
+<div style="height:40%">NO₂</div>
+<div style="height:50%">O₃</div>
+</div>
+</div>
+
+</div>
+</body>
+</html>

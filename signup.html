@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>BreatheEasy+ | Sign Up</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #050d12;
+      --surface: #0c1f2c;
+      --card: #0f2535;
+      --border: rgba(56, 189, 180, 0.15);
+      --teal: #38bdb4;
+      --teal-glow: rgba(56, 189, 180, 0.3);
+      --teal-light: #5fd6ce;
+      --text: #e8f4f3;
+      --muted: #7a9ea0;
+      --danger: #ff6b6b;
+      --success: #4ade80;
+      --input-bg: rgba(255,255,255,0.04);
+    }
+
+    body {
+      background: var(--bg);
+      font-family: 'DM Sans', sans-serif;
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow-x: hidden;
+    }
+
+    /* Animated background */
+    .bg-canvas {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      overflow: hidden;
+    }
+
+    .bg-canvas::before {
+      content: '';
+      position: absolute;
+      width: 600px; height: 600px;
+      background: radial-gradient(circle, rgba(56,189,180,0.12) 0%, transparent 70%);
+      top: -150px; right: -100px;
+      animation: float1 8s ease-in-out infinite;
+    }
+
+    .bg-canvas::after {
+      content: '';
+      position: absolute;
+      width: 400px; height: 400px;
+      background: radial-gradient(circle, rgba(56,189,180,0.07) 0%, transparent 70%);
+      bottom: -100px; left: -80px;
+      animation: float2 10s ease-in-out infinite;
+    }
+
+    @keyframes float1 {
+      0%, 100% { transform: translate(0,0); }
+      50% { transform: translate(-30px, 30px); }
+    }
+
+    @keyframes float2 {
+      0%, 100% { transform: translate(0,0); }
+      50% { transform: translate(20px, -20px); }
+    }
+
+    /* Particles */
+    .particles {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+    }
+
+    .particle {
+      position: absolute;
+      border-radius: 50%;
+      background: var(--teal);
+      opacity: 0;
+      animation: rise linear infinite;
+    }
+
+    @keyframes rise {
+      0% { transform: translateY(100vh) scale(0); opacity: 0; }
+      10% { opacity: 0.4; }
+      90% { opacity: 0.1; }
+      100% { transform: translateY(-10vh) scale(1); opacity: 0; }
+    }
+
+    /* Layout */
+    .page {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0;
+    }
+
+    /* Left Panel */
+    .left-panel {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 60px 60px 60px 80px;
+      position: relative;
+      opacity: 0;
+      animation: slideIn 0.8s ease forwards 0.2s;
+    }
+
+    .left-panel::after {
+      content: '';
+      position: absolute;
+      right: 0; top: 10%; bottom: 10%;
+      width: 1px;
+      background: linear-gradient(to bottom, transparent, var(--teal), transparent);
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 60px;
+    }
+
+    .logo-icon {
+      width: 44px; height: 44px;
+      background: linear-gradient(135deg, var(--teal), #1a6e6b);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      box-shadow: 0 0 20px var(--teal-glow);
+    }
+
+    .logo-text {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: 1.4rem;
+      letter-spacing: -0.5px;
+    }
+
+    .logo-text span { color: var(--teal); }
+
+    .hero-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(56,189,180,0.1);
+      border: 1px solid var(--border);
+      border-radius: 100px;
+      padding: 6px 16px;
+      font-size: 0.78rem;
+      color: var(--teal);
+      margin-bottom: 28px;
+      width: fit-content;
+    }
+
+    .hero-tag::before {
+      content: '';
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--teal);
+      animation: pulse 2s ease infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.8); }
+    }
+
+    .hero-title {
+      font-family: 'Syne', sans-serif;
+      font-size: 3rem;
+      font-weight: 800;
+      line-height: 1.1;
+      margin-bottom: 20px;
+      letter-spacing: -1px;
+    }
+
+    .hero-title .accent { 
+      color: var(--teal);
+      position: relative;
+    }
+
+    .hero-desc {
+      font-size: 1rem;
+      color: var(--muted);
+      line-height: 1.7;
+      max-width: 380px;
+      margin-bottom: 48px;
+    }
+
+    .features {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .feature-item {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 14px 18px;
+      background: rgba(56,189,180,0.05);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      font-size: 0.9rem;
+      color: var(--muted);
+      transition: all 0.3s;
+    }
+
+    .feature-item:hover {
+      background: rgba(56,189,180,0.1);
+      color: var(--text);
+      border-color: rgba(56,189,180,0.3);
+      transform: translateX(6px);
+    }
+
+    .feature-icon {
+      font-size: 1.2rem;
+      width: 36px; height: 36px;
+      background: rgba(56,189,180,0.1);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    /* Right Panel - Form */
+    .right-panel {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 40px 80px 40px 60px;
+      opacity: 0;
+      animation: slideIn 0.8s ease forwards 0.4s;
+    }
+
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .form-header {
+      margin-bottom: 32px;
+    }
+
+    .form-title {
+      font-family: 'Syne', sans-serif;
+      font-size: 1.8rem;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+
+    .form-subtitle {
+      font-size: 0.9rem;
+      color: var(--muted);
+    }
+
+    .form-subtitle a {
+      color: var(--teal);
+      text-decoration: none;
+      font-weight: 500;
+    }
+
+    .form-subtitle a:hover { text-decoration: underline; }
+
+    /* Form */
+    .signup-form {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .field label {
+      font-size: 0.78rem;
+      font-weight: 500;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .input-wrap {
+      position: relative;
+    }
+
+    .input-wrap .icon {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 1rem;
+      color: var(--muted);
+      pointer-events: none;
+      transition: color 0.3s;
+    }
+
+    .field input,
+    .field select {
+      width: 100%;
+      background: var(--input-bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 14px 12px 40px;
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.9rem;
+      outline: none;
+      transition: all 0.3s;
+      appearance: none;
+    }
+
+    .field input::placeholder { color: rgba(122,158,160,0.5); }
+
+    .field input:focus,
+    .field select:focus {
+      border-color: var(--teal);
+      background: rgba(56,189,180,0.06);
+      box-shadow: 0 0 0 3px var(--teal-glow);
+    }
+
+    .field input:focus + .icon,
+    .field select:focus + .icon { color: var(--teal); }
+
+    .field input:focus ~ .icon,
+    .field select:focus ~ .icon { color: var(--teal); }
+
+    /* Special — icon before input in DOM */
+    .input-wrap .icon { z-index: 1; }
+
+    .field select option {
+      background: var(--card);
+      color: var(--text);
+    }
+
+    /* Health condition special */
+    .health-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+
+    .health-option {
+      display: none;
+    }
+
+    .health-label {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      padding: 10px 6px;
+      background: var(--input-bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 0.72rem;
+      color: var(--muted);
+      text-align: center;
+      transition: all 0.25s;
+      line-height: 1.3;
+    }
+
+    .health-label .emoji { font-size: 1.3rem; }
+
+    .health-option:checked + .health-label {
+      background: rgba(56,189,180,0.12);
+      border-color: var(--teal);
+      color: var(--teal);
+      box-shadow: 0 0 10px var(--teal-glow);
+    }
+
+    .health-label:hover {
+      background: rgba(56,189,180,0.07);
+      border-color: rgba(56,189,180,0.3);
+      color: var(--text);
+    }
+
+    /* Duration slider */
+    .slider-wrap {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .slider-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .slider-val {
+      font-family: 'Syne', sans-serif;
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--teal);
+      min-width: 60px;
+      text-align: right;
+    }
+
+    input[type="range"] {
+      flex: 1;
+      -webkit-appearance: none;
+      height: 4px;
+      background: var(--border);
+      border-radius: 100px;
+      outline: none;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 18px; height: 18px;
+      background: var(--teal);
+      border-radius: 50%;
+      cursor: pointer;
+      box-shadow: 0 0 8px var(--teal-glow);
+      transition: transform 0.2s;
+    }
+
+    input[type="range"]::-webkit-slider-thumb:hover {
+      transform: scale(1.3);
+    }
+
+    /* Submit button */
+    .btn-submit {
+      width: 100%;
+      padding: 14px;
+      background: linear-gradient(135deg, var(--teal), #1e8a85);
+      color: #050d12;
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 1rem;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      letter-spacing: 0.3px;
+      transition: all 0.3s;
+      position: relative;
+      overflow: hidden;
+      margin-top: 4px;
+    }
+
+    .btn-submit::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(255,255,255,0.15), transparent);
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    .btn-submit:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px var(--teal-glow);
+    }
+
+    .btn-submit:hover::after { opacity: 1; }
+    .btn-submit:active { transform: translateY(0); }
+
+    /* Divider */
+    .divider {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      color: var(--muted);
+      font-size: 0.78rem;
+    }
+
+    .divider::before, .divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    /* VF Badge */
+    .vf-badge {
+      display: none;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 16px;
+      background: rgba(56,189,180,0.08);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      font-size: 0.82rem;
+      color: var(--muted);
+      margin-top: -4px;
+      animation: fadeIn 0.4s ease;
+    }
+
+    .vf-badge.show { display: flex; }
+
+    .vf-number {
+      font-family: 'Syne', sans-serif;
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--teal);
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Responsive */
+    @media (max-width: 900px) {
+      .page { grid-template-columns: 1fr; }
+      .left-panel {
+        padding: 40px 32px 20px;
+        display: none;
+      }
+      .left-panel::after { display: none; }
+      .right-panel { padding: 40px 24px; }
+      .form-row { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 480px) {
+      .hero-title { font-size: 2rem; }
+      .health-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: var(--teal); border-radius: 3px; }
+
+    /* Success state */
+    .success-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      background: var(--bg);
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      animation: fadeIn 0.5s ease;
+    }
+
+    .success-overlay.show { display: flex; }
+
+    .success-icon {
+      width: 80px; height: 80px;
+      background: rgba(56,189,180,0.1);
+      border: 2px solid var(--teal);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2.5rem;
+      animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) 0.2s both;
+    }
+
+    @keyframes popIn {
+      from { transform: scale(0); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+
+    .success-title {
+      font-family: 'Syne', sans-serif;
+      font-size: 1.6rem;
+      font-weight: 700;
+    }
+
+    .success-msg {
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    .btn-go {
+      padding: 12px 32px;
+      background: linear-gradient(135deg, var(--teal), #1e8a85);
+      color: #050d12;
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      margin-top: 8px;
+      font-size: 0.95rem;
+      transition: all 0.3s;
+    }
+
+    .btn-go:hover { box-shadow: 0 6px 20px var(--teal-glow); transform: translateY(-2px); }
+  </style>
+</head>
+<body>
+
+<!-- Background -->
+<div class="bg-canvas"></div>
+<div class="particles" id="particles"></div>
+
+<!-- Success Overlay -->
+<div class="success-overlay" id="successOverlay">
+  <div class="success-icon">✓</div>
+  <div class="success-title">Account Created!</div>
+  <div class="success-msg">Welcome to BreatheEasy+. Your health is our priority.</div>
+  <button class="btn-go" onclick="document.getElementById('successOverlay').classList.remove('show')">Go to Dashboard →</button>
+</div>
+
+<div class="page">
+
+  <!-- Left Panel -->
+  <div class="left-panel">
+    <div class="logo">
+      <div class="logo-icon">🌬️</div>
+      <div class="logo-text">Breathe<span>Easy+</span></div>
+    </div>
+
+    <div class="hero-tag">Real-Time Air Quality Intelligence</div>
+
+    <h1 class="hero-title">
+      Breathe smarter,<br>
+      live <span class="accent">healthier.</span>
+    </h1>
+
+    <p class="hero-desc">
+      Personalized air quality advisories tailored to your unique health profile. Know when, where, and how long to go outside — safely.
+    </p>
+
+    <div class="features">
+      <div class="feature-item">
+        <div class="feature-icon">🧮</div>
+        Vulnerability-Adjusted Exposure Score
+      </div>
+      <div class="feature-item">
+        <div class="feature-icon">📡</div>
+        Real-Time PM2.5, PM10, NO₂, O₃ Data
+      </div>
+      <div class="feature-item">
+        <div class="feature-icon">📈</div>
+        Long-Term Exposure Health Tracking
+      </div>
+      <div class="feature-item">
+        <div class="feature-icon">🗺️</div>
+        Low-Pollution Route Suggestions
+      </div>
+    </div>
+  </div>
+
+  <!-- Right Panel -->
+  <div class="right-panel">
+    <div class="form-header">
+      <h2 class="form-title">Create your account</h2>
+      <p class="form-subtitle">Already have one? <a href="main.html">Log in here</a></p>
+    </div>
+
+    <form class="signup-form" id="signupForm" onsubmit="handleSubmit(event)">
+
+      <!-- Row 1 -->
+      <div class="form-row">
+        <div class="field">
+          <label>Full Name</label>
+          <div class="input-wrap">
+            <span class="icon">👤</span>
+            <input type="text" placeholder="e.g. Robert" required />
+          </div>
+        </div>
+        <div class="field">
+          <label>Email Address</label>
+          <div class="input-wrap">
+            <span class="icon">✉️</span>
+            <input type="email" placeholder="you@email.com" required />
+          </div>
+        </div>
+      </div>
+
+      <!-- Row 2 -->
+      <div class="form-row">
+        <div class="field">
+          <label>Password</label>
+          <div class="input-wrap">
+            <span class="icon">🔒</span>
+            <input type="password" placeholder="Min. 8 characters" required />
+          </div>
+        </div>
+        <div class="field">
+          <label>Confirm Password</label>
+          <div class="input-wrap">
+            <span class="icon">🔒</span>
+            <input type="password" placeholder="Re-enter password" required />
+          </div>
+        </div>
+      </div>
+
+      <!-- Row 3 -->
+      <div class="form-row">
+        <div class="field">
+          <label>Age</label>
+          <div class="input-wrap">
+            <span class="icon">🎂</span>
+            <input type="number" placeholder="e.g. 25" min="1" max="120" required />
+          </div>
+        </div>
+        <div class="field">
+          <label>Gender</label>
+          <div class="input-wrap">
+            <span class="icon">⚥</span>
+            <select required>
+              <option value="" disabled selected>Select gender</option>
+              <option>Male</option>
+              <option>Female</option>
+              <option>Other</option>
+              <option>Prefer not to say</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- City -->
+      <div class="field">
+        <label>City / Location</label>
+        <div class="input-wrap">
+          <span class="icon">📍</span>
+          <input type="text" placeholder="e.g. Bengaluru, Hosur, Chennai" required />
+        </div>
+      </div>
+
+      <!-- Health Condition -->
+      <div class="field">
+        <label>Health Condition</label>
+        <div class="health-grid">
+
+          <input type="radio" name="health" id="h1" value="healthy" class="health-option" onchange="updateVF(1.0,'Healthy Adult')">
+          <label for="h1" class="health-label"><span class="emoji">💪</span>Healthy</label>
+
+          <input type="radio" name="health" id="h2" value="asthma" class="health-option" onchange="updateVF(1.5,'Asthma Patient')">
+          <label for="h2" class="health-label"><span class="emoji">🫁</span>Asthma</label>
+
+          <input type="radio" name="health" id="h3" value="elderly" class="health-option" onchange="updateVF(1.3,'Elderly Person')">
+          <label for="h3" class="health-label"><span class="emoji">🧓</span>Elderly</label>
+
+          <input type="radio" name="health" id="h4" value="pregnant" class="health-option" onchange="updateVF(1.4,'Pregnant Woman')">
+          <label for="h4" class="health-label"><span class="emoji">🤰</span>Pregnant</label>
+
+          <input type="radio" name="health" id="h5" value="heart" class="health-option" onchange="updateVF(1.4,'Heart Disease')">
+          <label for="h5" class="health-label"><span class="emoji">❤️</span>Heart Disease</label>
+
+          <input type="radio" name="health" id="h6" value="child" class="health-option" onchange="updateVF(1.3,'Child')">
+          <label for="h6" class="health-label"><span class="emoji">🧒</span>Child</label>
+
+        </div>
+      </div>
+
+      <!-- VF Badge -->
+      <div class="vf-badge" id="vfBadge">
+        <span>⚡</span>
+        <span>Vulnerability Factor assigned: <strong class="vf-number" id="vfNum">—</strong></span>
+        <span id="vfLabel" style="color:var(--teal); font-size:0.78rem;"></span>
+      </div>
+
+      <!-- Outdoor Duration -->
+      <div class="field">
+        <label>Daily Outdoor Duration</label>
+        <div class="slider-wrap">
+          <div class="slider-row">
+            <input type="range" min="0" max="12" step="0.5" value="2"
+              oninput="document.getElementById('sliderVal').textContent = this.value + ' hrs'" />
+            <span class="slider-val" id="sliderVal">2 hrs</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Submit -->
+      <button type="submit" class="btn-submit">Create My Account →</button>
+
+      <div class="divider">By signing up, you agree to our Terms & Privacy Policy</div>
+
+    </form>
+  </div>
+</div>
+
+<script>
+  // Particles
+  const container = document.getElementById('particles');
+  for (let i = 0; i < 25; i++) {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    const size = Math.random() * 4 + 2;
+    p.style.cssText = `
+      width: ${size}px;
+      height: ${size}px;
+      left: ${Math.random() * 100}%;
+      animation-duration: ${Math.random() * 12 + 8}s;
+      animation-delay: ${Math.random() * 10}s;
+      opacity: 0;
+    `;
+    container.appendChild(p);
+  }
+
+  // Vulnerability Factor update
+  function updateVF(val, label) {
+    const badge = document.getElementById('vfBadge');
+    document.getElementById('vfNum').textContent = val.toFixed(1);
+    document.getElementById('vfLabel').textContent = `(${label})`;
+    badge.classList.add('show');
+  }
+
+  // Form submit
+  function handleSubmit(e) {
+    e.preventDefault();
+    const btn = e.target.querySelector('.btn-submit');
+    btn.textContent = 'Creating account...';
+    btn.style.opacity = '0.7';
+    setTimeout(() => {
+      document.getElementById('successOverlay').classList.add('show');
+      btn.textContent = 'Create My Account →';
+      btn.style.opacity = '1';
+    }, 1500);
+  }
+</script>
+
+</body>
+</html>
