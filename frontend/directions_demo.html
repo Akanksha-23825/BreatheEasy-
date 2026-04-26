@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BreatheEasy+ - Color-Coded Route Planner</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container { max-width: 1600px; margin: 0 auto; }
+        
+        .header {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        
+        .main-grid {
+            display: grid;
+            grid-template-columns: 450px 1fr;
+            gap: 20px;
+        }
+        
+        .sidebar {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            height: fit-content;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        
+        .map-container {
+            background: white;
+            border-radius: 15px;
+            padding: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        
+        #map {
+            height: 500px;
+            border-radius: 10px;
+            background: #f0f0f0;
+        }
+        
+        .form-group { margin-bottom: 20px; }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        input, select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 14px;
+        }
+        
+        button {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        
+        button:disabled { opacity: 0.6; cursor: not-allowed; }
+        
+        .route-card {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 15px;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 2px solid transparent;
+        }
+        
+        .route-card:hover { transform: translateX(5px); }
+        .route-card.recommended { background: #e8f5e9; border-color: #4caf50; }
+        
+        .color-indicator {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+            margin-right: 10px;
+            vertical-align: middle;
+        }
+        
+        .route-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .verification-badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 15px;
+            font-size: 11px;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+        
+        .verified { background: #4caf50; color: white; }
+        .partial { background: #ff9800; color: white; }
+        .unverified { background: #f44336; color: white; }
+        
+        .accuracy-score {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+        }
+        
+        .legend {
+            display: flex;
+            gap: 15px;
+            margin-top: 10px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            font-size: 12px;
+            flex-wrap: wrap;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .legend-color {
+            width: 20px;
+            height: 3px;
+            border-radius: 2px;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 50px;
+            color: #666;
+        }
+        
+        .error {
+            background: #ffebee;
+            color: #c62828;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 15px;
+        }
+        
+        /* Directions styling */
+        .directions-container {
+            margin-top: 15px;
+            padding: 12px;
+            background: #f0f0f0;
+            border-radius: 8px;
+            border-left: 4px solid;
+        }
+        
+        .direction-step {
+            display: flex;
+            margin-bottom: 8px;
+            font-size: 12px;
+            align-items: flex-start;
+        }
+        
+        .step-number {
+            background: #667eea;
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            margin-right: 10px;
+            flex-shrink: 0;
+        }
+        
+        .step-text {
+            flex: 1;
+        }
+        
+        .step-distance {
+            color: #666;
+            font-size: 10px;
+            margin-left: 5px;
+        }
+        
+        .directions-toggle {
+            background: none;
+            border: none;
+            color: #667eea;
+            cursor: pointer;
+            font-size: 12px;
+            padding: 5px;
+            margin-top: 5px;
+            text-align: left;
+        }
+        
+        @media (max-width: 968px) {
+            .main-grid { grid-template-columns: 1fr; }
+            .sidebar { max-height: none; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🌬️ BreatheEasy+</h1>
+            <p>Real-time personalized air pollution exposure advisory with turn-by-turn directions</p>
+        </div>
+        
+        <div class="main-grid">
+            <div class="sidebar">
+                <h3>📍 Journey Planner</h3>
+                
+                <div class="form-group">
+                    <label>🚗 Starting Point</label>
+                    <input type="text" id="start" placeholder="e.g., Mylasandra, Bangalore" value="Mylasandra, Bangalore">
+                </div>
+                
+                <div class="form-group">
+                    <label>🏁 Destination</label>
+                    <input type="text" id="end" placeholder="e.g., Majestic, Bangalore" value="Majestic, Bangalore">
+                </div>
+                
+                <div class="form-group">
+                    <label>❤️ Health Condition</label>
+                    <select id="condition">
+                        <option value="normal">✅ Normal Healthy</option>
+                        <option value="asthma">🌬️ Asthma</option>
+                        <option value="heart disease">❤️ Heart Disease</option>
+                        <option value="pregnant">🤰 Pregnant</option>
+                        <option value="elderly">👴 Elderly (65+)</option>
+                        <option value="child">🧒 Child (under 12)</option>
+                    </select>
+                </div>
+                
+                <button onclick="getDynamicRoute()">🔍 Find & Verify Route</button>
+                
+                <!-- Color Legend -->
+                <div class="legend">
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #2563eb; height: 20px; width: 20px; border-radius: 10px;"></div>
+                        <span>Route 1 (Blue)</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #dc2626; height: 20px; width: 20px; border-radius: 10px;"></div>
+                        <span>Route 2 (Red)</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #16a34a; height: 20px; width: 20px; border-radius: 10px;"></div>
+                        <span>Route 3 (Green)</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #f59e0b; height: 20px; width: 20px; border-radius: 10px;"></div>
+                        <span>⭐ Recommended</span>
+                    </div>
+                </div>
+                
+                <div id="routesList" style="margin-top: 20px;">
+                    <div class="loading">Enter locations and click search</div>
+                </div>
+            </div>
+            
+            <div class="map-container">
+                <div id="map"></div>
+                <div style="margin-top: 10px; font-size: 12px; color: #666; text-align: center;">
+                    🟢 Each route has a unique color | ⭐ Thick border = Recommended route | Click route card for details
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        let map;
+        let currentRoutes = [];
+        let routeLayers = [];
+        
+        // Route color palette
+        const ROUTE_COLORS = [
+            { main: '#2563eb', light: '#60a5fa', name: 'Blue' },
+            { main: '#dc2626', light: '#f87171', name: 'Red' },
+            { main: '#16a34a', light: '#4ade80', name: 'Green' }
+        ];
+        
+        function initMap() {
+            map = L.map('map').setView([12.9716, 77.5946], 12);
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>'
+            }).addTo(map);
+        }
+        
+        function getColorByWES(wes) {
+            if (wes < 50) return '#4caf50';
+            if (wes < 100) return '#ff9800';
+            if (wes < 150) return '#f44336';
+            return '#9c27b0';
+        }
+        
+        async function geocodeAddress(address) {
+            const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&limit=1`;
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+                if (data && data.length > 0) {
+                    return {
+                        lat: parseFloat(data[0].lat),
+                        lng: parseFloat(data[0].lon),
+                        display_name: data[0].display_name
+                    };
+                }
+                return null;
+            } catch (error) {
+                console.error('Geocoding error:', error);
+                return null;
+            }
+        }
+        
+        async function getDynamicRoute() {
+            const startAddress = document.getElementById('start').value;
+            const endAddress = document.getElementById('end').value;
+            const condition = document.getElementById('condition').value;
+            
+            if (!startAddress || !endAddress) {
+                alert('Please enter both start and destination');
+                return;
+            }
+            
+            document.getElementById('routesList').innerHTML = '<div class="loading">🔍 Geocoding addresses...</div>';
+            
+            const startGeo = await geocodeAddress(startAddress);
+            const endGeo = await geocodeAddress(endAddress);
+            
+            if (!startGeo || !endGeo) {
+                document.getElementById('routesList').innerHTML = '<div class="loading">❌ Could not find locations. Please be more specific.</div>';
+                return;
+            }
+            
+            map.setView([(startGeo.lat + endGeo.lat)/2, (startGeo.lng + endGeo.lng)/2], 12);
+            document.getElementById('routesList').innerHTML = '<div class="loading">🔄 Fetching routes with air quality data...</div>';
+            
+            const requestData = {
+                start_lat: startGeo.lat,
+                start_lng: startGeo.lng,
+                end_lat: endGeo.lat,
+                end_lng: endGeo.lng,
+                condition: condition,
+                start_name: startAddress,
+                end_name: endAddress
+            };
+            
+            try {
+                const response = await fetch('http://localhost:5000/api/route', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(requestData)
+                });
+                
+                const data = await response.json();
+                
+                if (data.success && data.routes && Array.isArray(data.routes)) {
+                    displayRoutesWithColors(data.routes, condition);
+                } else {
+                    let errorMsg = data.error || 'No routes found';
+                    document.getElementById('routesList').innerHTML = `<div class="error">❌ Error: ${errorMsg}</div>`;
+                }
+            } catch (error) {
+                console.error('Fetch error:', error);
+                document.getElementById('routesList').innerHTML = `<div class="error">❌ Connection error: Make sure Flask is running on port 5000</div>`;
+            }
+        }
+        
+        function displayRoutesWithColors(routes, condition) {
+            currentRoutes = routes;
+            
+            routeLayers.forEach(layer => map.removeLayer(layer));
+            routeLayers = [];
+            
+            let html = '<h4>📋 Available Routes</h4>';
+            
+            for (let i = 0; i < routes.length; i++) {
+                const route = routes[i];
+                const isRecommended = route.recommended;
+                const colorIndex = i % ROUTE_COLORS.length;
+                const routeColor = ROUTE_COLORS[colorIndex];
+                const lineColor = isRecommended ? '#f59e0b' : routeColor.main;
+                const lineWidth = isRecommended ? 6 : 4;
+                
+                const verification = route.verification || {};
+                const accuracyScore = verification.accuracy_score || 0;
+                const verificationStatus = verification.verification_status || 'unverified';
+                const statusText = verification.status_text || 'Unknown';
+                const checks = verification.checks || [];
+                const checkMessages = checks.slice(0, 2).map(c => c.message).join(' • ');
+                
+                // Draw route on map
+                if (route.coords && Array.isArray(route.coords) && route.coords.length > 0) {
+                    const latlngs = route.coords.map(coord => {
+                        if (Array.isArray(coord) && coord.length >= 2) {
+                            return [coord[1], coord[0]];
+                        }
+                        return null;
+                    }).filter(coord => coord !== null);
+                    
+                    if (latlngs.length > 0) {
+                        const routeLine = L.polyline(latlngs, {
+                            color: lineColor,
+                            weight: lineWidth,
+                            opacity: 0.8,
+                            lineCap: 'round',
+                            lineJoin: 'round'
+                        }).addTo(map);
+                        
+                        if (isRecommended) {
+                            const glowLine = L.polyline(latlngs, {
+                                color: '#f59e0b',
+                                weight: 10,
+                                opacity: 0.2,
+                                lineCap: 'round',
+                                lineJoin: 'round'
+                            }).addTo(map);
+                            routeLayers.push(glowLine);
+                        }
+                        
+                        routeLine.bindPopup(`
+                            <div style="font-family: Arial, sans-serif; min-width: 200px;">
+                                <b style="color: ${lineColor}">🚗 ${route.route_name || `Route ${route.route_id}`}</b><br>
+                                <hr style="margin: 5px 0;">
+                                📏 Distance: <b>${route.distance || '?'} km</b><br>
+                                ⏱️ Duration: <b>${route.duration || '?'} min</b><br>
+                                🌫️ WES Score: <b>${route.avg_wes || '?'}</b><br>
+                                📊 Risk: <b style="color: ${getColorByWES(route.avg_wes)}">${route.risk || 'Unknown'}</b><br>
+                                🎯 Accuracy: <b>${accuracyScore}%</b><br>
+                                ${isRecommended ? '<span style="color: #f59e0b;">⭐ RECOMMENDED ROUTE ⭐</span>' : ''}
+                            </div>
+                        `);
+                        
+                        routeLayers.push(routeLine);
+                        addDirectionArrows(latlngs, routeColor.main);
+                    }
+                }
+                
+                let badgeClass = 'unverified';
+                if (verificationStatus === 'verified') badgeClass = 'verified';
+                else if (verificationStatus === 'partial') badgeClass = 'partial';
+                
+                const wesColor = getColorByWES(route.avg_wes);
+                
+                // Generate directions HTML
+                let directionsHtml = '';
+                if (route.directions && route.directions.length > 0) {
+                    directionsHtml = `
+                        <div class="directions-container" style="border-left-color: ${lineColor};">
+                            <strong>🧭 Turn-by-Turn Directions:</strong>
+                            <div style="margin-top: 8px;">
+                                ${route.directions.map(step => `
+                                    <div class="direction-step">
+                                        <span class="step-number">${step.step}</span>
+                                        <span class="step-text">
+                                            ${step.instruction}
+                                            <span class="step-distance">(${step.distance} km)</span>
+                                        </span>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    // Fallback directions if not provided by backend
+                    directionsHtml = `
+                        <div class="directions-container" style="border-left-color: ${lineColor};">
+                            <strong>🧭 Route Summary:</strong>
+                            <div style="margin-top: 8px; font-size: 12px;">
+                                This route passes through ${route.area || 'multiple areas'}.
+                                Total distance: ${route.distance} km, Estimated time: ${route.duration} min.
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                html += `
+                    <div class="route-card ${isRecommended ? 'recommended' : ''}" onclick="selectRoute(${i})">
+                        <div class="route-header">
+                            <div>
+                                <span class="color-indicator" style="background: ${lineColor};"></span>
+                                <strong>${isRecommended ? '⭐ RECOMMENDED' : `Route ${route.route_id}`}</strong>
+                                <span style="color: ${routeColor.main}; font-size: 12px; margin-left: 5px;">
+                                    (${route.route_name || routeColor.name} Route)
+                                </span>
+                            </div>
+                            <span class="verification-badge ${badgeClass}">
+                                ${statusText}
+                            </span>
+                        </div>
+                        
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 10px 0;">
+                            <div>
+                                <div style="font-size: 11px; color: #666;">Distance</div>
+                                <div style="font-size: 16px; font-weight: bold;">${route.distance || '?'} km</div>
+                            </div>
+                            <div>
+                                <div style="font-size: 11px; color: #666;">Duration</div>
+                                <div style="font-size: 16px; font-weight: bold;">${route.duration || '?'} min</div>
+                            </div>
+                            <div>
+                                <div style="font-size: 11px; color: #666;">WES Score</div>
+                                <div style="font-size: 16px; font-weight: bold; color: ${wesColor};">${route.avg_wes || '?'}</div>
+                            </div>
+                            <div>
+                                <div style="font-size: 11px; color: #666;">Risk Level</div>
+                                <div style="font-size: 14px; font-weight: bold; color: ${wesColor};">${route.risk || 'Unknown'}</div>
+                            </div>
+                        </div>
+                        
+                        <div class="accuracy-score">🎯 Accuracy Score: ${accuracyScore}%</div>
+                        ${checkMessages ? `<div style="font-size: 11px; margin-top: 8px; color: #666; padding: 5px; background: #f0f0f0; border-radius: 5px;">${checkMessages}</div>` : ''}
+                        
+                        ${route.avg_pm25 ? `
+                        <div style="font-size: 11px; margin-top: 8px; color: #666;">
+                            📊 Avg Pollutants: PM2.5:${route.avg_pm25} | PM10:${route.avg_pm10} | NO2:${route.avg_no2} | O3:${route.avg_o3}
+                        </div>
+                        ` : ''}
+                        
+                        ${directionsHtml}
+                    </div>
+                `;
+            }
+            
+            if (routeLayers.length > 0) {
+                const group = L.featureGroup(routeLayers.filter(l => l instanceof L.Polyline));
+                map.fitBounds(group.getBounds().pad(0.1));
+            }
+            
+            document.getElementById('routesList').innerHTML = html;
+        }
+        
+        function addDirectionArrows(latlngs, color) {
+            const arrowInterval = Math.floor(latlngs.length / 8);
+            for (let i = arrowInterval; i < latlngs.length - arrowInterval; i += arrowInterval) {
+                const point = latlngs[i];
+                if (point) {
+                    const marker = L.circleMarker(point, {
+                        radius: 3,
+                        color: color,
+                        fillColor: color,
+                        fillOpacity: 0.8,
+                        weight: 1
+                    }).addTo(map);
+                    routeLayers.push(marker);
+                }
+            }
+        }
+        
+        function selectRoute(index) {
+            if (currentRoutes[index] && routeLayers[index]) {
+                routeLayers.forEach((layer, i) => {
+                    if (layer instanceof L.Polyline) {
+                        const isRecommended = currentRoutes[i]?.recommended;
+                        const defaultWidth = isRecommended ? 6 : 4;
+                        layer.setStyle({ weight: defaultWidth });
+                    }
+                });
+                
+                if (routeLayers[index] instanceof L.Polyline) {
+                    routeLayers[index].setStyle({ weight: 8 });
+                }
+                
+                map.fitBounds(routeLayers[index].getBounds());
+            }
+        }
+        
+        initMap();
+    </script>
+</body>
+</html>

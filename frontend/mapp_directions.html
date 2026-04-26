@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BreatheEasy+ - Mappls Route Planner</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        .container {
+            display: flex;
+            height: 100vh;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 380px;
+            background: white;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+            z-index: 10;
+            overflow-y: auto;
+        }
+
+        .sidebar h2 {
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .sidebar .subtitle {
+            color: #666;
+            font-size: 12px;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #333;
+            font-size: 14px;
+        }
+
+        input,
+        select {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        input:focus,
+        select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: transform 0.2s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+        }
+
+        .route-info {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 20px;
+        }
+
+        .route-card {
+            background: white;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 2px solid transparent;
+        }
+
+        .route-card:hover {
+            transform: translateX(5px);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .route-card.selected {
+            border-color: #667eea;
+            background: #f0f0ff;
+        }
+
+        .route-name {
+            font-weight: bold;
+            color: #333;
+        }
+
+        .route-details {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .wes-score {
+            font-size: 14px;
+            font-weight: bold;
+            margin-top: 5px;
+        }
+
+        .risk-safe {
+            color: #4caf50;
+        }
+
+        .risk-moderate {
+            color: #ff9800;
+        }
+
+        .risk-high {
+            color: #f44336;
+        }
+
+        .risk-dangerous {
+            color: #9c27b0;
+        }
+
+        .directions {
+            margin-top: 15px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .direction-step {
+            padding: 8px;
+            border-bottom: 1px solid #e0e0e0;
+            font-size: 12px;
+            display: flex;
+            align-items: flex-start;
+        }
+
+        .step-num {
+            background: #667eea;
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            margin-right: 10px;
+            flex-shrink: 0;
+        }
+
+        .step-text {
+            flex: 1;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+
+        #map {
+            flex: 1;
+            height: 100vh;
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 320px;
+            }
+        }
+    </style>
+    <!-- Mappls Web SDK -->
+    <script
+        src="https://sdk.mappls.com/map/sdk/plugins?access_token=YOUR_MAPPLS_API_KEY_HERE&v=3.0&libraries=direction"></script>
+</head>
+
+<body>
+    <div class="container">
+        <div class="sidebar">
+            <h2>🌬️ BreatheEasy+</h2>
+            <div class="subtitle">Real-time personalized air pollution advisory</div>
+
+            <div class="form-group">
+                <label>🚗 Starting Point</label>
+                <input type="text" id="start" placeholder="Enter start location" value="Mylasandra, Bangalore">
+                <input type="text" id="startCoords" placeholder="Or enter coordinates (lat,lng)"
+                    value="12.9236,77.4989">
+            </div>
+
+            <div class="form-group">
+                <label>🏁 Destination</label>
+                <input type="text" id="end" placeholder="Enter destination" value="Majestic, Bangalore">
+                <input type="text" id="endCoords" placeholder="Or enter coordinates (lat,lng)" value="12.9780,77.5722">
+            </div>
+
+            <div class="form-group">
+                <label>❤️ Health Condition</label>
+                <select id="condition">
+                    <option value="normal">✅ Normal Healthy</option>
+                    <option value="asthma">🌬️ Asthma</option>
+                    <option value="heart">❤️ Heart Disease</option>
+                    <option value="pregnant">🤰 Pregnant</option>
+                    <option value="elderly">👴 Elderly (65+)</option>
+                    <option value="child">🧒 Child (under 12)</option>
+                </select>
+            </div>
+
+            <button onclick="getRoute()">🔍 Find Best Route</button>
+
+            <div class="route-info" id="routeInfo">
+                <div class="loading">Enter locations and click search</div>
+            </div>
+        </div>
+
+        <div id="map"></div>
+    </div>
+
+    <script>
+        let map;
+        let currentRouteLayers = [];
+        let currentRoutes = [];
+
+        // Replace with your actual Mappls API key
+        const MAPPLS_KEY = "neskjpcpvrvsbpbqrskksocoqobvngydvitg";
+
+        // Initialize map
+        function initMap() {
+            map = new mappls.Map('map', {
+                center: [12.9716, 77.5946],
+                zoom: 12,
+                zoomControl: true
+            });
+            console.log("✅ Map initialized");
+        }
+
+        // Get color based on WES score
+        function getColorByWES(wes) {
+            if (wes < 50) return '#4caf50';
+            if (wes < 100) return '#ff9800';
+            if (wes < 150) return '#f44336';
+            return '#9c27b0';
+        }
+
+        // Get risk label
+        function getRiskLabel(wes) {
+            if (wes < 50) return "Safe";
+            if (wes < 100) return "Moderate";
+            if (wes < 150) return "High Risk";
+            return "Dangerous";
+        }
+
+        // Simulate WES calculation (in real implementation, you'd call your backend)
+        function calculateWESForRoute(distance, condition) {
+            // Simulated WES based on distance and condition
+            // In production, this would use real WAQI data
+            let baseWES = distance * 8;
+
+            const conditionFactors = {
+                normal: 1.0,
+                asthma: 1.6,
+                heart: 1.5,
+                pregnant: 1.4,
+                elderly: 1.3,
+                child: 1.4
+            };
+
+            const factor = conditionFactors[condition] || 1.0;
+            return Math.round(baseWES * factor);
+        }
+
+        async function getRoute() {
+            const startCoords = document.getElementById('startCoords').value;
+            const endCoords = document.getElementById('endCoords').value;
+            const condition = document.getElementById('condition').value;
+
+            if (!startCoords || !endCoords) {
+                alert("Please enter valid coordinates");
+                return;
+            }
+
+            document.getElementById('routeInfo').innerHTML = '<div class="loading">🔄 Fetching routes from Mappls...</div>';
+
+            // Clear existing routes from map
+            if (currentRouteLayers.length) {
+                currentRouteLayers.forEach(layer => {
+                    if (layer.remove) layer.remove();
+                });
+                currentRouteLayers = [];
+            }
+
+            // Use Mappls direction plugin
+            mappls.direction({
+                map: map,
+                start: startCoords,
+                end: endCoords,
+                alternatives: true,
+                steps: true,
+                resource: "route_eta",
+                profile: "driving",
+                callback: function (data) {
+                    console.log("Mappls Response:", data);
+
+                    if (data && data.routes && data.routes.length > 0) {
+                        displayRoutes(data.routes, condition);
+                    } else {
+                        document.getElementById('routeInfo').innerHTML = `
+                            <div class="loading">
+                                ❌ No routes found<br>
+                                Try different coordinates
+                            </div>
+                        `;
+                    }
+                }
+            });
+        }
+
+        function displayRoutes(routes, condition) {
+            currentRoutes = routes;
+
+            let html = `<h4>📋 Available Routes (${routes.length})</h4>`;
+
+            routes.forEach((route, index) => {
+                const distance = (route.distance / 1000).toFixed(1);
+                const duration = (route.duration / 60).toFixed(0);
+                const wes = calculateWESForRoute(parseFloat(distance), condition);
+                const risk = getRiskLabel(wes);
+                const isRecommended = index === 0;
+                const riskClass = risk === 'Safe' ? 'risk-safe' :
+                    risk === 'Moderate' ? 'risk-moderate' :
+                        risk === 'High Risk' ? 'risk-high' : 'risk-dangerous';
+
+                // Extract steps/directions
+                let directionsHtml = '';
+                if (route.steps && route.steps.length > 0) {
+                    directionsHtml = '<div class="directions"><strong>🧭 Directions:</strong>';
+                    route.steps.slice(0, 8).forEach((step, stepIdx) => {
+                        let instruction = step.instruction || step.text || `Step ${stepIdx + 1}`;
+                        // Clean HTML tags
+                        instruction = instruction.replace(/<[^>]+>/g, '');
+                        directionsHtml += `
+                            <div class="direction-step">
+                                <span class="step-num">${stepIdx + 1}</span>
+                                <span class="step-text">${instruction}</span>
+                            </div>
+                        `;
+                    });
+                    directionsHtml += '</div>';
+                }
+
+                html += `
+                    <div class="route-card" onclick="selectRoute(${index})">
+                        <div class="route-name">
+                            ${isRecommended ? '⭐ RECOMMENDED' : `Route ${index + 1}`}
+                        </div>
+                        <div class="route-details">
+                            📏 ${distance} km | ⏱️ ${duration} min
+                        </div>
+                        <div class="wes-score ${riskClass}">
+                            🌫️ WES: ${wes} (${risk})
+                        </div>
+                        ${directionsHtml}
+                    </div>
+                `;
+            });
+
+            document.getElementById('routeInfo').innerHTML = html;
+
+            // Auto-select the first route
+            if (routes.length > 0) {
+                selectRoute(0);
+            }
+        }
+
+        function selectRoute(index) {
+            if (!currentRoutes[index]) return;
+
+            const route = currentRoutes[index];
+            const distance = (route.distance / 1000).toFixed(1);
+            const duration = (route.duration / 60).toFixed(0);
+
+            // Highlight selected card
+            document.querySelectorAll('.route-card').forEach((card, i) => {
+                if (i === index) {
+                    card.classList.add('selected');
+                } else {
+                    card.classList.remove('selected');
+                }
+            });
+
+            // Draw route on map (Mappls automatically draws when direction is called)
+            // We need to re-plot the selected route
+            const startCoords = document.getElementById('startCoords').value;
+            const endCoords = document.getElementById('endCoords').value;
+
+            mappls.direction({
+                map: map,
+                start: startCoords,
+                end: endCoords,
+                alternatives: false,
+                steps: true,
+                resource: "route_eta",
+                profile: "driving",
+                marker: false,
+                clearOldRoute: true,
+                callback: function (data) {
+                    console.log(`Selected route ${index + 1}`);
+                }
+            });
+        }
+
+        // Add geocoding helper
+        async function geocodeAddress(address) {
+            const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&limit=1`;
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+                if (data && data.length > 0) {
+                    document.getElementById('startCoords').value = `${data[0].lat},${data[0].lon}`;
+                }
+            } catch (error) {
+                console.error("Geocoding error:", error);
+            }
+        }
+
+        // Initialize when page loads
+        setTimeout(initMap, 500);
+
+        // Auto-search on load
+        setTimeout(() => {
+            getRoute();
+        }, 1500);
+    </script>
+</body>
+
+</html>
