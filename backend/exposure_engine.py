@@ -1,219 +1,210 @@
-# exposure_engine.py - COMPLETE WES EQUATIONS FOR ALL PATIENTS
+# exposure_engine.py
+# All math/formulas — no API calls here
 
 """
 WEIGHTED EXPOSURE SCORE (WES) FORMULA:
 WES = Σ (Pollutant_Concentration × Sensitivity_Weight × Breathing_Factor)
 
 Where:
-- Pollutant_Concentration: Actual value in µg/m³ from WAQI
-- Sensitivity_Weight: How dangerous this pollutant is for the condition (0-1)
-- Breathing_Factor: How much air this person inhales (relative to normal)
+- Pollutant_Concentration: Actual µg/m³ value from CPCB/WAQI
+- Sensitivity_Weight: How dangerous this pollutant is for the condition
+- Breathing_Factor: How much air this person inhales relative to normal adult
 """
 
-# SENSITIVITY WEIGHTS for each pollutant and condition
-# Higher weight = more dangerous for this condition
+# ── SENSITIVITY WEIGHTS ───────────────────────────────────────────
+# Medical basis: WHO Air Quality Guidelines 2021 + CPCB health impact studies
 SENSITIVITY_WEIGHTS = {
     "asthma": {
-        "pm25": 0.9,    # Most dangerous - triggers attacks
-        "pm10": 0.8,    # Highly dangerous - irritates airways
-        "no2": 0.7,     # Moderately dangerous - causes inflammation
-        "o3": 0.6,      # Less dangerous but still irritates
+        "pm25": 0.9,  # Most dangerous — triggers bronchospasm
+        "pm10": 0.8,  # Highly dangerous — irritates airways
+        "no2":  0.7,  # Causes airway inflammation
+        "o3":   0.6,  # Irritates bronchial lining
         "reasoning": "PM2.5 and PM10 penetrate deep into lungs, triggering bronchial inflammation"
     },
     "heart disease": {
-        "pm25": 0.8,    # Very dangerous - enters bloodstream
-        "pm10": 0.6,    # Moderately dangerous - some cardiovascular effect
-        "no2": 0.9,     # MOST dangerous - reduces oxygen delivery
-        "o3": 0.5,      # Less dangerous - minimal direct heart effect
+        "pm25": 0.8,  # Very dangerous — enters bloodstream, causes arterial inflammation
+        "pm10": 0.6,  # Moderate cardiovascular effect
+        "no2":  0.9,  # MOST dangerous — reduces oxygen delivery to heart
+        "o3":   0.5,  # Minimal direct heart effect
         "reasoning": "NO2 reduces oxygen delivery to heart while PM2.5 causes arterial inflammation"
     },
     "pregnant": {
-        "pm25": 0.9,    # MOST dangerous - crosses placenta
-        "pm10": 0.7,    # Dangerous - developmental concerns
-        "no2": 0.6,     # Moderate risk
-        "o3": 0.8,      # Highly dangerous - birth complications
+        "pm25": 0.9,  # MOST dangerous — crosses placenta, affects fetal development
+        "pm10": 0.7,  # Developmental concerns
+        "no2":  0.6,  # Moderate fetal risk
+        "o3":   0.8,  # High risk — linked to birth complications
         "reasoning": "PM2.5 and O3 can cross placenta and affect fetal development"
     },
     "elderly": {
-        "pm25": 0.8,    # High - reduced lung function
-        "pm10": 0.7,    # High - general respiratory stress
-        "no2": 0.7,     # High - cardiovascular strain
-        "o3": 0.6,      # Moderate - still concerning
-        "reasoning": "All pollutants are concerning due to reduced organ reserve"
+        "pm25": 0.8,  # High — reduced lung function with age
+        "pm10": 0.7,  # High — general respiratory stress
+        "no2":  0.7,  # High — cardiovascular strain
+        "o3":   0.6,  # Moderate — still concerning for reduced immunity
+        "reasoning": "All pollutants are concerning due to reduced organ reserve capacity"
     },
     "child": {
-        "pm25": 0.9,    # MOST dangerous - developing lungs
-        "pm10": 0.8,    # Very dangerous - higher breathing rate
-        "no2": 0.8,     # Very dangerous - affects lung development
-        "o3": 0.7,      # Dangerous - causes respiratory issues
-        "reasoning": "Children breathe faster and developing lungs are more vulnerable to PM2.5 and NO2"
+        "pm25": 0.9,  # MOST dangerous — developing lungs absorb more
+        "pm10": 0.8,  # Very dangerous — higher breathing rate per body weight
+        "no2":  0.8,  # Very dangerous — affects lung development
+        "o3":   0.7,  # Dangerous — causes respiratory issues in developing lungs
+        "reasoning": "Children breathe faster per body weight; developing lungs are more vulnerable"
     },
     "normal": {
-        "pm25": 0.5,    # Primary concern
-        "pm10": 0.4,    # Secondary concern
-        "no2": 0.3,     # Minimal at typical levels
-        "o3": 0.3,      # Minimal at typical levels
-        "reasoning": "PM2.5 is primary concern for general population"
+        "pm25": 0.5,  # Primary concern for general population
+        "pm10": 0.4,  # Secondary concern
+        "no2":  0.3,  # Minimal at typical urban levels
+        "o3":   0.3,  # Minimal at typical urban levels
+        "reasoning": "PM2.5 is primary concern for general healthy adults"
     }
 }
 
-# BREATHING RATE FACTOR (relative to normal adult)
-# Higher = more air inhaled = more pollutant intake
+# ── BREATHING RATE FACTOR ─────────────────────────────────────────
+# Relative to normal adult at rest (1.0 = baseline)
+# Source: WHO breathing rate data per demographic
 BREATHING_FACTOR = {
-    "asthma": 1.3,      # Higher during potential attack
-    "heart disease": 1.1,  # Slightly elevated
-    "pregnant": 1.2,    # Increased oxygen demand (20% more air)
-    "elderly": 0.9,     # Slightly reduced lung capacity
-    "child": 1.4,       # Much higher per kg body weight (40% more)
-    "normal": 1.0       # Baseline
+    "asthma":        1.3,   # Higher during inflammation episodes (+30%)
+    "heart disease": 1.1,   # Slightly elevated due to compensation (+10%)
+    "pregnant":      1.2,   # Increased oxygen demand, 20% more air intake
+    "elderly":       0.9,   # Slightly reduced lung capacity (-10%)
+    "child":         1.4,   # Much higher per kg body weight (+40%)
+    "normal":        1.0    # Baseline adult
 }
 
-# REFERENCE VALUES for context (not used in calculation, just for display)
-REFERENCE_VALUES = {
-    "pm25": {"good": 15, "moderate": 40, "unhealthy": 65},
-    "pm10": {"good": 50, "moderate": 100, "unhealthy": 150},
-    "no2": {"good": 40, "moderate": 80, "unhealthy": 120},
-    "o3": {"good": 50, "moderate": 100, "unhealthy": 130}
+# ── DEC TABLE (Daily Exposure Capacity) ───────────────────────────
+# Used to calculate max safe outdoor hours
+DEC_TABLE = {
+    "normal":        200,
+    "asthma":        120,
+    "heart disease": 130,
+    "pregnant":      150,
+    "elderly":       140,
+    "child":         110,
 }
 
-def calculate_wes(pm25, pm10, no2, o3, condition="normal"):
+
+# ── CORE FUNCTIONS ────────────────────────────────────────────────
+
+def calculate_wes(pm25, pm10, no2, o3, condition="normal", duration_min=30):
     """
-    Calculate Weighted Exposure Score using condition-specific weights.
+    Calculate Weighted Exposure Score (WES).
     
-    WES = Σ (Pollutant × Weight × Breathing_Factor)
+    Now includes DURATION to reflect total exposure.
+    Exposure = Concentration × Sensitivity × Breathing × (Time / 30min)
     
-    Range: 0-500
-    - 0-50: Safe
-    - 50-100: Moderate
-    - 100-150: High Risk
-    - 150+: Dangerous
-    
-    Example for ASTHMA:
-    If PM2.5=80, PM10=100, NO2=40, O3=30:
-    WES = (80 × 0.9 × 1.3) + (100 × 0.8 × 1.3) + (40 × 0.7 × 1.3) + (30 × 0.6 × 1.3)
-        = 93.6 + 104 + 36.4 + 23.4
-        = 257.4 (DANGEROUS)
+    Risk ranges (scaled for 30min base):
+    0-50:   Safe
+    50-100: Moderate
+    100-150: High Risk
+    150+:   Dangerous
     """
-    
-    # Get weights for this condition
-    weights = SENSITIVITY_WEIGHTS.get(condition, SENSITIVITY_WEIGHTS["normal"])
+    weights   = SENSITIVITY_WEIGHTS.get(condition, SENSITIVITY_WEIGHTS["normal"])
     breathing = BREATHING_FACTOR.get(condition, 1.0)
     
-    # Handle missing data (default to 0)
+    # Time factor (normalized to 30 mins)
+    # If a route is 60 mins, exposure is doubled.
+    time_factor = duration_min / 30.0
+
     pm25 = pm25 or 0
     pm10 = pm10 or 0
-    no2 = no2 or 0
-    o3 = o3 or 0
-    
-    # Calculate WES
-    wes = (
+    no2  = no2  or 0
+    o3   = o3   or 0
+
+    base_wes = (
         (pm25 * weights["pm25"] * breathing) +
         (pm10 * weights["pm10"] * breathing) +
-        (no2 * weights["no2"] * breathing) +
-        (o3 * weights["o3"] * breathing)
+        (no2  * weights["no2"]  * breathing) +
+        (o3   * weights["o3"]   * breathing)
     )
     
+    wes = base_wes * time_factor
     return round(wes, 2)
 
-def get_wes_breakdown(pm25, pm10, no2, o3, condition="normal"):
-    """
-    Show how WES is calculated step by step
-    Useful for debugging and user education
-    """
-    weights = SENSITIVITY_WEIGHTS.get(condition, SENSITIVITY_WEIGHTS["normal"])
+
+def get_wes_breakdown(pm25, pm10, no2, o3, condition="normal", duration_min=30):
+    """Return step-by-step WES calculation — useful for UI display"""
+    weights   = SENSITIVITY_WEIGHTS.get(condition, SENSITIVITY_WEIGHTS["normal"])
     breathing = BREATHING_FACTOR.get(condition, 1.0)
-    
-    pm25_contrib = pm25 * weights["pm25"] * breathing if pm25 else 0
-    pm10_contrib = pm10 * weights["pm10"] * breathing if pm10 else 0
-    no2_contrib = no2 * weights["no2"] * breathing if no2 else 0
-    o3_contrib = o3 * weights["o3"] * breathing if o3 else 0
-    
-    total = pm25_contrib + pm10_contrib + no2_contrib + o3_contrib
-    
-    return {
-        "condition": condition,
-        "breathing_factor": breathing,
-        "contributions": {
-            "PM2.5": round(pm25_contrib, 2),
-            "PM10": round(pm10_contrib, 2),
-            "NO2": round(no2_contrib, 2),
-            "O3": round(o3_contrib, 2)
-        },
-        "total_wes": round(total, 2),
-        "formula": f"WES = ({pm25}×{weights['pm25']}×{breathing}) + ({pm10}×{weights['pm10']}×{breathing}) + ({no2}×{weights['no2']}×{breathing}) + ({o3}×{weights['o3']}×{breathing}) = {round(total, 2)}"
+    time_factor = duration_min / 30.0
+
+    contributions = {
+        "PM2.5": round((pm25 or 0) * weights["pm25"] * breathing * time_factor, 2),
+        "PM10":  round((pm10 or 0) * weights["pm10"] * breathing * time_factor, 2),
+        "NO2":   round((no2  or 0) * weights["no2"]  * breathing * time_factor, 2),
+        "O3":    round((o3   or 0) * weights["o3"]   * breathing * time_factor, 2),
     }
+    total = sum(contributions.values())
+
+    return {
+        "condition":        condition,
+        "duration_min":     duration_min,
+        "breathing_factor": breathing,
+        "contributions":    contributions,
+        "total_wes":        round(total, 2),
+        "reasoning":        weights["reasoning"],
+        "formula": (
+            f"WES = [({pm25}×{weights['pm25']}×{breathing})"
+            f" + ({pm10}×{weights['pm10']}×{breathing})"
+            f" + ({no2}×{weights['no2']}×{breathing})"
+            f" + ({o3}×{weights['o3']}×{breathing})]"
+            f" × ({duration_min}/30)"
+            f" = {round(total, 2)}"
+        )
+    }
+
 
 def compare_patients(pm25, pm10, no2, o3):
     """
-    Show how different patients experience the SAME air differently
+    Show how different patients experience the SAME air.
+    Useful for demo day — proves personalization works.
     """
-    patients = ["asthma", "heart disease", "pregnant", "elderly", "child", "normal"]
     results = {}
-    
-    for patient in patients:
-        wes = calculate_wes(pm25, pm10, no2, o3, patient)
-        if wes < 50:
-            risk = "🟢 Safe"
-        elif wes < 100:
-            risk = "🟡 Moderate"
-        elif wes < 150:
-            risk = "🟠 High Risk"
-        else:
-            risk = "🔴 DANGEROUS"
-        results[patient] = {"wes": wes, "risk": risk}
-    
+    for condition in ["asthma", "heart disease", "pregnant", "elderly", "child", "normal"]:
+        wes = calculate_wes(pm25, pm10, no2, o3, condition)
+        results[condition] = {"wes": wes, "risk": get_risk_emoji(wes)}
     return results
 
-# Risk thresholds (same for all, but different WES values cross thresholds differently)
-def get_risk(wes):
-    if wes < 50: return "Safe"
-    if wes < 100: return "Moderate"
-    if wes < 150: return "High Risk"
-    return "Dangerous"
 
-def get_risk_emoji(wes):
-    if wes < 50: return "🟢 Safe"
-    if wes < 100: return "🟡 Moderate"
-    if wes < 150: return "🟠 High Risk"
-    return "🔴 Dangerous"
+def calculate_el(wes, outdoor_hours):
+    """Exposure Load = WES × hours spent outdoors"""
+    return round(wes * outdoor_hours, 2)
+
 
 def calculate_safe_time(condition, aqi):
-    """Maximum safe outdoor hours based on condition and AQI"""
-    dec_table = {
-        "normal": 200,
-        "asthma": 120,
-        "heart disease": 130,
-        "pregnant": 150,
-        "elderly": 140,
-        "child": 110
-    }
-    dec = dec_table.get(condition, 200)
+    """Maximum safe outdoor hours based on condition and current AQI"""
+    dec  = DEC_TABLE.get(condition, 200)
     safe = round(dec / max(aqi, 1), 2)
-    return max(safe, 0.25)
+    return max(safe, 0.25)  # minimum 15 minutes
 
-# Test function
+
+def get_risk(wes):
+    if wes < 50:  return "Safe"
+    if wes < 100: return "Moderate"
+    if wes < 150: return "High Risk"
+    return               "Dangerous"
+
+
+def get_risk_emoji(wes):
+    if wes < 50:  return "🟢 Safe"
+    if wes < 100: return "🟡 Moderate"
+    if wes < 150: return "🟠 High Risk"
+    return               "🔴 Dangerous"
+
+
+# ── DEMO / TEST ───────────────────────────────────────────────────
 if __name__ == "__main__":
     print("=" * 70)
-    print("WES EQUATION DEMO - Same Air, Different Patients")
+    print("WES DEMO — Same Air, Different Patients")
+    print("Scenario: Heavy Traffic Junction")
+    print(f"PM2.5=120 µg/m³ | PM10=150 µg/m³ | NO2=80 µg/m³ | O3=40 µg/m³")
     print("=" * 70)
-    
-    # Example: High PM2.5 scenario (traffic junction)
-    print("\n📊 Scenario: Heavy Traffic Area")
-    print(f"   PM2.5: 120 µg/m³ | PM10: 150 µg/m³ | NO2: 80 µg/m³ | O3: 40 µg/m³")
-    print("-" * 70)
-    
-    comparison = compare_patients(120, 150, 80, 40)
-    
-    for patient, data in comparison.items():
-        print(f"{patient.upper():15} → WES: {data['wes']:6.2f}  ({data['risk']})")
-    
+
+    results = compare_patients(120, 150, 80, 40)
+    for condition, data in results.items():
+        print(f"{condition.upper():15} → WES: {data['wes']:6.1f}  {data['risk']}")
+
     print("\n" + "=" * 70)
-    print("🔬 Detailed Breakdown for ASTHMA Patient:")
+    print("Detailed Breakdown — ASTHMA Patient:")
     print("=" * 70)
-    
     breakdown = get_wes_breakdown(120, 150, 80, 40, "asthma")
-    print(f"\n{breakdown['formula']}")
-    print(f"\nContributions:")
-    for pollutant, contrib in breakdown['contributions'].items():
-        print(f"  {pollutant}: {contrib}")
-    print(f"\nReasoning: {SENSITIVITY_WEIGHTS['asthma']['reasoning']}")
+    print(f"\nFormula: {breakdown['formula']}")
+    print(f"Reasoning: {breakdown['reasoning']}")

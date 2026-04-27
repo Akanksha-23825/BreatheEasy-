@@ -1873,7 +1873,9 @@
 
         async function onMapClick(e) {
             const { lat, lng } = e.latlng;
-            
+            const now = Date.now();
+            const cacheKey = `${Math.round(lat*100)}|${Math.round(lng*100)}`;
+
             // Show loading popup immediately
             const popup = L.popup({ maxWidth: 300 })
                 .setLatLng(e.latlng)
@@ -1893,8 +1895,6 @@
                 const areaName = geoData.display_name.split(',')[0] + ', ' + (geoData.address.suburb || geoData.address.neighbourhood || 'Bangalore');
 
                 // 2. Check Cache
-                const cacheKey = `${Math.round(lat*100)}|${Math.round(lng*100)}`;
-                const now = Date.now();
                 if (aqiCache.has(cacheKey)) {
                     const cached = aqiCache.get(cacheKey);
                     if (now - cached.timestamp < 3600000) { // 1 hour cache
@@ -1903,16 +1903,28 @@
                     }
                 }
 
-                // 3. Fetch WAQI Data
-                const waqiUrl = `https://api.waqi.info/feed/geo:${lat};${lng}/?token=${WAQI_TOKEN}`;
-                const waqiRes = await fetch(waqiUrl);
-                const waqiData = await waqiRes.json();
+                // 2. Fetch Validated AQI Data from our Backend (Fixes the 'Shanghai' issue)
+                const aqiUrl = `http://localhost:5000/api/aqi?lat=${lat}&lng=${lng}`;
+                const aqiRes = await fetch(aqiUrl);
+                const aqiData = await aqiRes.json();
 
-                if (waqiData.status === 'ok') {
-                    aqiCache.set(cacheKey, { data: waqiData.data, timestamp: now });
-                    popup.setContent(renderAQIPopup(waqiData.data, areaName, lat, lng, false));
+                if (aqiData && !aqiData.error) {
+                    // Standardize data for renderAQIPopup
+                    const normalizedData = {
+                        aqi: aqiData.aqi,
+                        city: { name: aqiData.station || aqiData.name || 'Bangalore Sensor' },
+                        iaqi: {
+                            pm25: { v: aqiData.pm25 },
+                            pm10: { v: aqiData.pm10 },
+                            no2:  { v: aqiData.no2 },
+                            o3:   { v: aqiData.o3 }
+                        }
+                    };
+                    
+                    aqiCache.set(cacheKey, { data: normalizedData, timestamp: now });
+                    popup.setContent(renderAQIPopup(normalizedData, areaName, lat, lng, false));
                 } else {
-                    popup.setContent(`<div style="padding:10px; color:#ef4444; font-size:12px;">❌ Could not fetch AQI for this location.</div>`);
+                    popup.setContent(`<div style="padding:10px; color:#ef4444; font-size:12px;">❌ Could not fetch Indian data for this location.</div>`);
                 }
             } catch (err) {
                 console.error(err);
@@ -2007,8 +2019,9 @@
                         </div>
                     </div>
 
-                    <div style="font-size: 10px; color: #94a3b8; margin-top: 10px;">
-                        📡 Source: ${data.city.name}
+                    <div style="font-size: 10px; color: #94a3b8; margin-top: 10px; display: flex; justify-content: space-between; align-items: center;">
+                        <span>📡 Source: ${data.city.name}</span>
+                        <a href="https://aqicn.org/search/#q=${encodeURIComponent(data.city.name)}" target="_blank" style="color: #6366f1; text-decoration: none; font-weight: bold; border: 1px solid #6366f1; padding: 2px 6px; border-radius: 4px;">🔍 Verify Live</a>
                     </div>
                     ${isCached ? '<div class="stale-warning">📦 Using cached data</div>' : ''}
                 </div>
