@@ -16,10 +16,7 @@ CLIENT_ID     = os.getenv("OLA_CLIENT_ID")
 CLIENT_SECRET = os.getenv("OLA_CLIENT_SECRET")
 WAQI_TOKEN    = os.getenv("WAQI_TOKEN")
 
-print("🗺️  BreatheEasy+ Ola Maps Router")
-print(f"   Client ID:     {'✓ Loaded' if CLIENT_ID     else '✗ MISSING'}")
-print(f"   Client Secret: {'✓ Loaded' if CLIENT_SECRET else '✗ MISSING'}")
-print(f"   WAQI Token:    {'✓ Loaded' if WAQI_TOKEN    else '✗ MISSING'}")
+# Credentials loaded from .env
 
 # ── TOKEN CACHE ───────────────────────────────────────────────────
 access_token  = None
@@ -69,13 +66,13 @@ def get_access_token():
             access_token = token_data.get("access_token")
             expires_in   = token_data.get("expires_in", 3600)
             token_expiry = datetime.now() + timedelta(seconds=expires_in - 60)
-            print(f"   ✅ Token acquired")
+            print(f"   [OK] Token acquired")
             return access_token
         else:
-            print(f"   ❌ Token failed: {response.status_code} - {response.text}")
+            print(f"   [ERROR] Token failed: {response.status_code} - {response.text}")
             return None
     except Exception as e:
-        print(f"   ❌ Token error: {e}")
+        print(f"   [ERROR] Token error: {e}")
         return None
 
 
@@ -182,7 +179,7 @@ def get_route_aqi(coords, condition):
     mid_lng, mid_lat = coords[len(coords)//2]
     region     = get_region(mid_lat, mid_lng)
     fallback   = REGION_AQI_FALLBACK[region]
-    print(f"   🔄 All WAQI calls failed — using {region.upper()} regional estimate")
+    print(f"   [INFO] All WAQI calls failed - using {region.upper()} regional estimate")
 
     return {
         "pm25":     fallback["pm25"],
@@ -362,7 +359,7 @@ def recommend_route(start_lat, start_lng, end_lat, end_lng,
     FIX: alpha_map now uses full condition names (was partial strings before)
     """
     print(f"\n{'='*55}")
-    print(f"🎯 BreatheEasy+ Route Finder")
+    print(f"BreatheEasy+ Route Finder")
     print(f"   Condition : {condition.upper()}")
     print(f"   From      : {start_name or f'({start_lat}, {start_lng})'}")
     print(f"   To        : {end_name   or f'({end_lat}, {end_lng})'}")

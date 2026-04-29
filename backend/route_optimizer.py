@@ -14,9 +14,9 @@ load_dotenv()
 WAQI_TOKEN = os.getenv("WAQI_TOKEN")
 ORS_KEY = os.getenv("ORS_KEY")
 
-print("🔑 BreatheEasy+ Initializing...")
-print(f"   WAQI Token: {'✓ Loaded' if WAQI_TOKEN else '✗ MISSING'}")
-print(f"   ORS Key: {'✓ Loaded' if ORS_KEY else '✗ MISSING'}")
+print("BreatheEasy+ Initializing...")
+print(f"   WAQI Token: {'[OK]' if WAQI_TOKEN else '[MISSING]'}")
+print(f"   ORS Key: {'[OK]' if ORS_KEY else '[MISSING]'}")
 print()
 
 # Bangalore area AQI patterns by region (SIMULATED based on real data)
@@ -274,7 +274,7 @@ def score_route_with_regional_aqi(route, condition, alpha=0.5):
             })
             count += 1
             
-            print(f"       → WES: {wes} (AQI: {aqi_data['aqi']})")
+            print(f"{condition.upper():15} -> WES: {wes:6.1f}  (AQI: {aqi_data['aqi']})")
         
         time.sleep(0.2)
     
@@ -292,9 +292,9 @@ def score_route_with_regional_aqi(route, condition, alpha=0.5):
     normalized_distance = min(route["distance"] / 50, 1.0)
     combined = round((alpha * normalized_wes) + ((1 - alpha) * normalized_distance), 4)
     
-    print(f"\n  📊 {route['route_name']} Summary:")
+    print(f"\n  Summary: {route['route_name']}")
     print(f"     Average WES: {avg_wes}")
-    print(f"     PM2.5: {avg_pm25} | NO2: {avg_no2}")
+    print(f"PM2.5=120 ug/m3 | PM10=150 ug/m3 | NO2=80 ug/m3 | O3=40 ug/m3")
     
     return {
         "avg_wes": avg_wes,

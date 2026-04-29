@@ -3,7 +3,7 @@
 
 from flask import Flask, jsonify, request
 from flask_cors import CORS
-from ola_oauth_router import recommend_route, get_waqi_data, get_region, REGION_AQI_FALLBACK
+from osm_router import recommend_route, get_waqi_data, get_region, REGION_AQI_FALLBACK
 from exposure_engine import calculate_safe_time, get_risk_emoji
 from datetime import datetime
 
@@ -24,18 +24,7 @@ def home():
 # ── ROUTE RECOMMENDATION ──────────────────────────────────────────
 @app.route("/api/route", methods=["POST"])
 def get_route_recommendation():
-    """
-    Input JSON:
-    {
-        "start_lat":  12.9236,
-        "start_lng":  77.4989,
-        "end_lat":    12.9698,
-        "end_lng":    77.7500,
-        "condition":  "asthma",
-        "start_name": "RVCE",       (optional)
-        "end_name":   "Whitefield"  (optional)
-    }
-    """
+    print("\n>>> API REQUEST RECEIVED: Processing routes...")
     data = request.json
 
     # Validate required fields
@@ -141,8 +130,9 @@ def get_point_aqi():
 
 # ── RUN ───────────────────────────────────────────────────────────
 if __name__ == "__main__":
-    print("\n" + "="*55)
-    print("🚀 BreatheEasy+ Backend v2.0")
-    print("   http://localhost:5000")
-    print("="*55 + "\n")
-    app.run(debug=True, port=5000)
+    print("=" * 55)
+    print("BreatheEasy+ Backend v2.0")
+    print("   http://localhost:5001")
+    print("   Read PROJECT_OVERVIEW.md for system details")
+    print("=" * 55)
+    app.run(host="127.0.0.1", port=5001, debug=True)

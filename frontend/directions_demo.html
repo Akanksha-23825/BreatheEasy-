@@ -38,6 +38,19 @@
             display: grid;
             grid-template-columns: 450px 1fr;
             gap: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .main-grid.nav-active {
+            grid-template-columns: 1fr;
+        }
+
+        .main-grid.nav-active .sidebar {
+            display: none;
+        }
+
+        .main-grid.nav-active #map {
+            height: 750px;
         }
 
         .sidebar {
@@ -57,42 +70,58 @@
         }
 
         #map {
-            height: 500px;
+            height: 600px;
+            width: 100%;
             border-radius: 10px;
-            background: #f0f0f0;
+            z-index: 1;
         }
 
-        .form-group {
-            margin-bottom: 20px;
+        .input-group {
+            margin-bottom: 15px;
         }
 
         label {
             display: block;
-            margin-bottom: 8px;
-            font-weight: 600;
-            color: #333;
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #444;
         }
 
         input,
         select {
             width: 100%;
             padding: 12px;
-            border: 2px solid #e0e0e0;
-            border-radius: 10px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
             font-size: 14px;
         }
 
-        button {
-            width: 100%;
-            padding: 12px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        button.primary-btn {
+            background: #667eea;
             color: white;
             border: none;
-            border-radius: 10px;
-            font-size: 16px;
-            font-weight: 600;
+            padding: 12px 20px;
+            border-radius: 8px;
             cursor: pointer;
+            font-weight: bold;
+            width: 100%;
             margin-top: 10px;
+            transition: background 0.3s;
+        }
+
+        button.primary-btn:hover {
+            background: #764ba2;
+        }
+
+        .comp-card {
+            background: #fff;
+            border: 1px solid #eee;
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 15px;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
         }
 
         button:disabled {
@@ -189,10 +218,27 @@
             border-radius: 2px;
         }
 
+        .map-container {
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            padding: 10px;
+            box-shadow: var(--shadow);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            position: relative;
+        }
+
+        #map {
+            height: 600px;
+            width: 100%;
+            border-radius: 12px;
+            z-index: 1;
+        }
+
         .loading {
             text-align: center;
             padding: 50px;
-            color: #666;
+            color: var(--text-muted);
+            font-weight: 600;
         }
 
         .error {
@@ -201,6 +247,45 @@
             padding: 15px;
             border-radius: 10px;
             margin-top: 15px;
+        }
+
+        /* Custom Map Styles */
+        .map-instruction-label {
+            background: rgba(255, 255, 255, 0.95);
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            padding: 3px 6px;
+            font-size: 11px;
+            font-weight: 500;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            color: #333;
+        }
+
+        .route-label-tag {
+            pointer-events: none;
+        }
+
+        .start-marker, .end-marker {
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .start-marker:hover, .end-marker:hover {
+            transform: scale(1.2);
+        }
+
+        .map-turn-icon {
+            box-shadow: 0 0 5px rgba(0,0,0,0.3);
+        }
+
+        .leaflet-popup-content-wrapper {
+            border-radius: 12px;
+            padding: 0;
+            overflow: hidden;
+        }
+
+        .leaflet-popup-content {
+            margin: 0;
+            width: auto !important;
         }
 
         /* Directions styling overrides */
@@ -995,6 +1080,54 @@
         }
 
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        .pollutant-badges {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+
+        .pollutant-badge {
+            background: #f0f0f0;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            color: #666;
+        }
+
+        .directions-toggle {
+            margin-top: 10px;
+            padding: 8px;
+            background: #f8f9fa;
+            border-radius: 4px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 13px;
+            font-weight: bold;
+            color: #4f46e5;
+            cursor: pointer;
+        }
+
+        .directions-list {
+            margin-top: 10px;
+            padding-left: 10px;
+            border-left: 2px solid #eee;
+            display: none;
+        }
+
+        .direction-step {
+            padding: 5px 0;
+            font-size: 12px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .selected-card {
+            border: 3px solid #6366f1 !important;
+            transform: scale(1.02);
+            box-shadow: 0 8px 25px rgba(99, 102, 241, 0.2);
+        }
     </style>
 </head>
 
@@ -1007,100 +1140,86 @@
 
         <div class="main-grid">
             <div class="sidebar">
-                <h3>📍 Journey Planner</h3>
-
-                <div class="form-group">
-                    <label>🚗 Starting Point</label>
-                    <input type="text" id="start" placeholder="e.g., Mylasandra, Bangalore"
-                        value="Mylasandra, Bangalore">
+                <div class="input-group">
+                    <label>📍 Starting Point</label>
+                    <input type="text" id="start" placeholder="e.g. Kengeri, Bangalore" value="Kengeri, Bangalore">
                 </div>
 
-                <div class="form-group">
+                <div class="input-group">
                     <label>🏁 Destination</label>
-                    <input type="text" id="end" placeholder="e.g., Majestic, Bangalore" value="Majestic, Bangalore">
+                    <input type="text" id="end" placeholder="e.g. Malleshwaram, Bangalore" value="Malleshwaram, Bangalore">
                 </div>
 
-                <div class="form-group">
+                <div class="input-group">
                     <label>❤️ Health Condition</label>
                     <select id="condition">
-                        <option value="normal">✅ Normal Healthy</option>
-                        <option value="asthma">🌬️ Asthma</option>
-                        <option value="heart disease">❤️ Heart Disease</option>
-                        <option value="pregnant">🤰 Pregnant</option>
-                        <option value="elderly">👴 Elderly (65+)</option>
-                        <option value="child">🧒 Child (under 12)</option>
+                        <option value="normal">Normal Healthy</option>
+                        <option value="asthma">Asthma</option>
+                        <option value="heart disease">Heart Disease</option>
+                        <option value="pregnant">Pregnant</option>
+                        <option value="elderly">Elderly (65+)</option>
+                        <option value="child">Child (under 12)</option>
                     </select>
                 </div>
 
-                <button onclick="getDynamicRoute()">🔍 Find & Verify Route</button>
-
-                <!-- Color Legend -->
-                <div class="legend">
-                    <div class="legend-item">
-                        <div class="legend-color"
-                            style="background: #2563eb; height: 20px; width: 20px; border-radius: 10px;"></div>
-                        <span>Route 1 (Blue)</span>
-                    </div>
-                    <div class="legend-item">
-                        <div class="legend-color"
-                            style="background: #dc2626; height: 20px; width: 20px; border-radius: 10px;"></div>
-                        <span>Route 2 (Red)</span>
-                    </div>
-                    <div class="legend-item">
-                        <div class="legend-color"
-                            style="background: #16a34a; height: 20px; width: 20px; border-radius: 10px;"></div>
-                        <span>Route 3 (Green)</span>
-                    </div>
-                    <div class="legend-item">
-                        <div class="legend-color"
-                            style="background: #f59e0b; height: 20px; width: 20px; border-radius: 10px;"></div>
-                        <span>⭐ Recommended</span>
-                    </div>
+                <div class="input-group">
+                    <label>📊 Sort Routes By</label>
+                    <select id="sortRoutes">
+                        <option value="wes">Lowest Exposure (WES)</option>
+                        <option value="distance">Shortest Distance</option>
+                        <option value="combined_score">Recommended Balance</option>
+                    </select>
                 </div>
 
-                <div id="routesList" style="margin-top: 20px;">
-                    <div class="loading">Enter locations and click search</div>
-                </div>
+                <button class="primary-btn" onclick="getDynamicRoute()">🔍 Find & Verify Route</button>
+
+                <div id="routesList" style="margin-top: 20px;"></div>
             </div>
 
             <div class="map-container">
                 <div id="map"></div>
                 <div style="margin-top: 10px; font-size: 12px; color: #666; text-align: center;">
-                    🟢 Each route has a unique color | ⭐ Thick border = Recommended route | Click route card for details
+                    🟢 Each route has a unique color | ⭐ Thick border – Recommended route | Click route card for details
                 </div>
             </div>
         </div>
 
-        <!-- Comparison Section -->
-        <div id="comparisonSection" class="comparison-wrapper" style="display: none;">
-            <div class="comparison-header">
-                <h2>🚥 Route Comparison</h2>
-                <div class="sort-controls">
-                    <label>Sort by:</label>
-                    <select id="sortRoutes" onchange="sortAndDisplayRoutes()">
-                        <option value="combined_score">⭐ Best Overall (Recommended)</option>
-                        <option value="wes">🌬️ Best Air Quality (Lowest WES)</option>
-                        <option value="distance">📏 Shortest Distance</option>
-                        <option value="duration">⏱️ Shortest Duration</option>
-                    </select>
-                </div>
-            </div>
-
+        <div id="comparisonSection" style="margin-top: 30px; display: none;">
             <div class="wes-legend" style="display: flex; gap: 15px; margin-bottom: 20px; font-size: 12px; flex-wrap: wrap; padding: 10px; background: #f8fafc; border-radius: 8px;">
                 <strong>🌬️ WES Scale:</strong>
-                <div style="display:flex; align-items:center; gap:5px;"><span style="display:inline-block; width:12px; height:12px; border-radius:50%; background:#4caf50;"></span> &lt; 50 (Safe)</div>
-                <div style="display:flex; align-items:center; gap:5px;"><span style="display:inline-block; width:12px; height:12px; border-radius:50%; background:#ff9800;"></span> 50-100 (Moderate)</div>
-                <div style="display:flex; align-items:center; gap:5px;"><span style="display:inline-block; width:12px; height:12px; border-radius:50%; background:#f44336;"></span> 100-150 (High Risk)</div>
-                <div style="display:flex; align-items:center; gap:5px;"><span style="display:inline-block; width:12px; height:12px; border-radius:50%; background:#9c27b0;"></span> &gt; 150 (Dangerous)</div>
+                <div style="display:flex; align-items:center; gap:5px;"><span style="display:inline-block; width:12px; height:12px; border-radius:50%; background:#16a34a;"></span> &lt; 30 (Excellent)</div>
+                <div style="display:flex; align-items:center; gap:5px;"><span style="display:inline-block; width:12px; height:12px; border-radius:50%; background:#84cc16;"></span> 30-50 (Safe)</div>
+                <div style="display:flex; align-items:center; gap:5px;"><span style="display:inline-block; width:12px; height:12px; border-radius:50%; background:#f59e0b;"></span> 50-100 (Moderate)</div>
+                <div style="display:flex; align-items:center; gap:5px;"><span style="display:inline-block; width:12px; height:12px; border-radius:50%; background:#ef4444;"></span> 100-150 (High Risk)</div>
+                <div style="display:flex; align-items:center; gap:5px;"><span style="display:inline-block; width:12px; height:12px; border-radius:50%; background:#7c3aed;"></span> &gt; 150 (Dangerous)</div>
             </div>
+            <div id="comparisonGrid" class="comparison-grid"></div>
+        </div>
 
             <div id="comparisonHighlights" class="comparison-highlights"></div>
-
             <div id="decisionGrid" class="decision-grid"></div>
-
             <div id="comparisonTableWrapper" class="comparison-table-wrapper"></div>
+        </div>
 
-            <div id="comparisonGrid" class="comparison-grid"></div>
+        <!-- Navigation On-Map UI (Floating Bar) -->
+        <div id="navOverlay" style="display: none; position: absolute; top: 20px; left: 50%; transform: translateX(-50%); width: 95%; max-width: 450px; z-index: 1000; flex-direction: column; pointer-events: none;">
+            <div id="navInstructionBox" style="background: white; color: #333; padding: 15px; border-radius: 12px; width: 100%; text-align: left; box-shadow: 0 4px 20px rgba(0,0,0,0.2); pointer-events: auto; border-top: 4px solid #667eea; display: flex; align-items: center; gap: 15px;">
+                <div id="navIcon" style="font-size: 32px; min-width: 40px; text-align: center;">⬆️</div>
+                <div style="flex: 1;">
+                    <div id="navText" style="font-size: 16px; font-weight: bold; line-height: 1.2;">Head towards your destination</div>
+                    <div id="navDistance" style="font-size: 13px; color: #667eea; font-weight: bold; margin-top: 2px;">0.5 km</div>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 5px;">
+                    <div style="display: flex; gap: 5px;">
+                        <button id="navBack" onclick="changeNavStep(-1)" style="background: #f1f5f9; color: #333; padding: 8px 12px; font-size: 12px; margin: 0; border: 1px solid #e2e8f0;">◀️</button>
+                        <button id="navNext" onclick="changeNavStep(1)" style="background: #667eea; color: white; padding: 8px 12px; font-size: 12px; margin: 0; border: none;">Next ▶️</button>
+                    </div>
+                    <button onclick="stopNavigation()" style="background: #fee2e2; color: #ef4444; padding: 5px; font-size: 10px; border: none; font-weight: bold; border-radius: 4px;">Stop Navigation</button>
+                </div>
+            </div>
+            <div style="margin-top: 10px; background: rgba(0,0,0,0.6); color: white; padding: 5px 15px; border-radius: 20px; font-size: 11px; align-self: center;">
+                📍 Auto-panning to next turn...
+            </div>
         </div>
     </div>
 
@@ -1119,8 +1238,11 @@
 
         function initMap() {
             map = L.map('map').setView([12.9716, 77.5946], 12);
-            L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>'
+            // Using a more detailed and premium OSM style (CartoDB Voyager)
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+                subdomains: 'abcd',
+                maxZoom: 20
             }).addTo(map);
 
             // Add click listener for interactive AQI lookups
@@ -1128,28 +1250,63 @@
         }
 
         function getColorByWES(wes) {
-            if (wes < 50) return '#4caf50';
-            if (wes < 100) return '#ff9800';
-            if (wes < 150) return '#f44336';
-            return '#9c27b0';
+            if (wes < 30) return '#16a34a'; // Excellent (Dark Green)
+            if (wes < 50) return '#84cc16'; // Safe (Lime Green)
+            if (wes < 100) return '#f59e0b'; // Moderate (Amber)
+            if (wes < 150) return '#ef4444'; // High Risk (Red)
+            return '#7c3aed'; // Dangerous (Purple)
         }
 
         async function geocodeAddress(address) {
-            const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&limit=1`;
-            try {
-                const response = await fetch(url);
-                const data = await response.json();
-                if (data && data.length > 0) {
-                    return {
-                        lat: parseFloat(data[0].lat),
-                        lng: parseFloat(data[0].lon),
-                        display_name: data[0].display_name
-                    };
-                }
-                return null;
-            } catch (error) {
-                console.error('Geocoding error:', error);
-                return null;
+            const baseUrl = 'https://nominatim.openstreetmap.org/search?format=json&limit=1';
+            const headers = { 
+                'Accept-Language': 'en',
+                'User-Agent': 'BreatheEasyPlus-App-Project-v2' 
+            };
+
+            const cleanAddress = (str) => {
+                // Remove common typos for Bangalore to clean the query
+                return str.replace(/banaglore|banglore|bengaluru/gi, 'Bangalore');
+            };
+
+            const tryFetch = async (query) => {
+                try {
+                    const url = `${baseUrl}&q=${encodeURIComponent(query)}`;
+                    const res = await fetch(url, { headers });
+                    const data = await res.json();
+                    return (data && data.length > 0) ? data[0] : null;
+                } catch (e) { return null; }
+            };
+
+            // Strategy 1: Cleaned User Input
+            let result = await tryFetch(cleanAddress(address));
+            if (result) return formatResult(result);
+
+            // Strategy 2: If contains comma, try just the first part + Bangalore
+            if (address.includes(',')) {
+                const firstPart = address.split(',')[0].trim();
+                result = await tryFetch(firstPart + ', Bangalore');
+                if (result) return formatResult(result);
+                
+                // Try just first part globally
+                result = await tryFetch(firstPart);
+                if (result) return formatResult(result);
+            }
+
+            // Strategy 3: Forced Bangalore search if not already tried
+            if (!address.toLowerCase().includes('bangalore')) {
+                result = await tryFetch(address + ', Bangalore');
+                if (result) return formatResult(result);
+            }
+
+            return null;
+
+            function formatResult(item) {
+                return {
+                    lat: parseFloat(item.lat),
+                    lng: parseFloat(item.lon),
+                    display_name: item.display_name
+                };
             }
         }
 
@@ -1187,7 +1344,7 @@
             };
 
             try {
-                const response = await fetch('http://localhost:5000/api/route', {
+                const response = await fetch('http://127.0.0.1:5001/api/route', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(requestData)
@@ -1196,14 +1353,19 @@
                 const data = await response.json();
 
                 if (data.success && data.routes && Array.isArray(data.routes)) {
-                    displayRoutesWithColors(data.routes, condition);
+                    try {
+                        displayRoutesWithColors(data.routes, condition);
+                    } catch (renderError) {
+                        console.error('Rendering error:', renderError);
+                        document.getElementById('routesList').innerHTML = `<div class="error">❌ Rendering Error: ${renderError.message}</div>`;
+                    }
                 } else {
                     let errorMsg = data.error || 'No routes found';
                     document.getElementById('routesList').innerHTML = `<div class="error">❌ Error: ${errorMsg}</div>`;
                 }
             } catch (error) {
                 console.error('Fetch error:', error);
-                document.getElementById('routesList').innerHTML = `<div class="error">❌ Connection error: Make sure Flask is running on port 5000</div>`;
+                document.getElementById('routesList').innerHTML = `<div class="error">❌ Connection error: Make sure Flask is running on port 5001</div>`;
             }
         }
 
@@ -1217,27 +1379,77 @@
             routeLayers = [];
             mainPolylines = [];
 
-            for (let i = 0; i < routes.length; i++) {
+            const recIndex = routes.findIndex(r => r.recommended);
+            const indicesToDraw = recIndex !== -1 ? [recIndex] : (routes.length > 0 ? [0] : []);
+            mainPolylines = new Array(routes.length).fill(null);
+
+            for (const i of indicesToDraw) {
                 const route = routes[i];
                 const isRecommended = route.recommended;
                 const colorIndex = i % ROUTE_COLORS.length;
                 const routeColor = ROUTE_COLORS[colorIndex];
                 const lineColor = isRecommended ? '#f59e0b' : routeColor.main;
-                const lineWidth = isRecommended ? 6 : 4;
+                // Make recommended route significantly thicker
+                const lineWidth = isRecommended ? 8 : 4;
 
-                const verification = route.verification || {};
-                const accuracyScore = verification.accuracy_score || 0;
-
-                // Draw route on map
                 if (route.coords && Array.isArray(route.coords) && route.coords.length > 0) {
-                    const latlngs = route.coords.map(coord => {
-                        if (Array.isArray(coord) && coord.length >= 2) {
-                            return [coord[1], coord[0]];
-                        }
-                        return null;
-                    }).filter(coord => coord !== null);
+                    const latlngs = route.coords.map(coord => [coord[1], coord[0]]);
 
-                    if (latlngs.length > 0) {
+                    if (route.point_aqi && route.point_aqi.length > 0) {
+                        // Background line for contrast
+                        const baseLine = L.polyline(latlngs, {
+                            color: '#000',
+                            weight: lineWidth + 2,
+                            opacity: 0.1,
+                            lineCap: 'round',
+                            lineJoin: 'round'
+                        }).addTo(map);
+                        routeLayers.push(baseLine);
+
+                        route.point_aqi.forEach((point, pIdx) => {
+                            if (pIdx < route.point_aqi.length - 1) {
+                                const nextPoint = route.point_aqi[pIdx + 1];
+                                const segment = [
+                                    [point.coord[1], point.coord[0]],
+                                    [nextPoint.coord[1], nextPoint.coord[0]]
+                                ];
+                                
+                                const segmentColor = getColorByWES(point.wes);
+                                const segmentLine = L.polyline(segment, {
+                                    color: segmentColor,
+                                    weight: lineWidth,
+                                    opacity: 1.0,
+                                    lineCap: 'round',
+                                    lineJoin: 'round'
+                                }).addTo(map);
+                                
+                                segmentLine.bindTooltip(`AQI: ${point.aqi} (${point.risk})`, { sticky: true });
+                                routeLayers.push(segmentLine);
+                            }
+                        });
+                        
+                        const invisibleLine = L.polyline(latlngs, {
+                            color: 'transparent',
+                            weight: 20,
+                            opacity: 0
+                        }).addTo(map);
+                        mainPolylines[i] = invisibleLine;
+                        routeLayers.push(invisibleLine);
+                        
+                        invisibleLine.bindPopup(`
+                            <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; min-width: 220px;">
+                                <div style="background: ${lineColor}; color: white; padding: 5px 10px; border-radius: 4px 4px 0 0; font-weight: bold; margin: -14px -14px 10px -14px;">
+                                    🚗 ${route.route_name}
+                                </div>
+                                📏 Distance: <b>${route.distance} km</b><br>
+                                ⏱️ Duration: <b>${route.duration} min</b><br>
+                                🌫️ Avg WES: <b>${route.avg_wes}</b><br>
+                                📊 Risk: <b style="color: ${getColorByWES(route.avg_wes)}">${route.risk}</b><br>
+                                ${isRecommended ? '<div style="margin-top: 8px; color: #f59e0b; font-weight: bold; border-top: 1px solid #eee; padding-top: 5px;">⭐ RECOMMENDED BY HEALTH AI</div>' : ''}
+                            </div>
+                        `);
+
+                    } else {
                         const routeLine = L.polyline(latlngs, {
                             color: lineColor,
                             weight: lineWidth,
@@ -1245,51 +1457,122 @@
                             lineCap: 'round',
                             lineJoin: 'round'
                         }).addTo(map);
-
                         mainPolylines[i] = routeLine;
-
-                        if (isRecommended) {
-                            const glowLine = L.polyline(latlngs, {
-                                color: '#f59e0b',
-                                weight: 10,
-                                opacity: 0.2,
-                                lineCap: 'round',
-                                lineJoin: 'round'
-                            }).addTo(map);
-                            routeLayers.push(glowLine);
-                        }
-
-                        routeLine.bindPopup(`
-                            <div style="font-family: Arial, sans-serif; min-width: 200px;">
-                                <b style="color: ${lineColor}">🚗 ${route.route_name || 'Route ' + route.route_id}</b><br>
-                                <hr style="margin: 5px 0;">
-                                📏 Distance: <b>${route.distance || '?'} km</b><br>
-                                ⏱️ Duration: <b>${route.duration || '?'} min</b><br>
-                                🌫️ WES Score: <b>${route.avg_wes || '?'}</b><br>
-                                📊 Risk: <b style="color: ${getColorByWES(route.avg_wes)}">${route.risk || 'Unknown'}</b><br>
-                                🎯 Accuracy: <b>${accuracyScore}%</b><br>
-                                ${isRecommended ? '<span style="color: #f59e0b;">⭐ RECOMMENDED ROUTE ⭐</span>' : ''}
-                            </div>
-                        `);
-
                         routeLayers.push(routeLine);
-                        addDirectionArrows(latlngs, routeColor.main);
-                        addTurnMarkers(route, routeColor.main, isRecommended);
                     }
+
+                    if (isRecommended) {
+                        // Extra glow for recommended route
+                        const glowLine = L.polyline(latlngs, {
+                            color: '#f59e0b',
+                            weight: lineWidth + 6,
+                            opacity: 0.2,
+                            lineCap: 'round',
+                            lineJoin: 'round'
+                        }).addTo(map);
+                        routeLayers.push(glowLine);
+                        
+                        // Add floating "RECOMMENDED" tag on the map
+                        const midPoint = latlngs[Math.floor(latlngs.length / 2)];
+                        const labelMarker = L.marker(midPoint, {
+                            icon: L.divIcon({
+                                className: 'route-label-tag',
+                                html: `<div style="background: #f59e0b; color: white; padding: 2px 8px; border-radius: 10px; font-size: 10px; font-weight: bold; white-space: nowrap; box-shadow: 0 2px 4px rgba(0,0,0,0.3); border: 1px solid white;">⭐ BEST HEALTH ROUTE</div>`,
+                                iconSize: [null, null],
+                                iconAnchor: [40, 10]
+                            })
+                        }).addTo(map);
+                        routeLayers.push(labelMarker);
+                    } else {
+                         // Label for alternative routes
+                         const midPoint = latlngs[Math.floor(latlngs.length / 3)];
+                         const labelMarker = L.marker(midPoint, {
+                             icon: L.divIcon({
+                                 className: 'route-label-tag',
+                                 html: `<div style="background: white; color: #64748b; padding: 2px 6px; border-radius: 10px; font-size: 9px; font-weight: bold; white-space: nowrap; box-shadow: 0 1px 3px rgba(0,0,0,0.2); border: 1px solid #e2e8f0;">Alt Route ${route.route_id}</div>`,
+                                 iconSize: [null, null]
+                             })
+                         }).addTo(map);
+                         routeLayers.push(labelMarker);
+                    }
+
+                    addRouteDecorations(route, routeColor.main, isRecommended);
                 }
             }
 
             if (routeLayers.length > 0) {
-                const group = L.featureGroup(routeLayers.filter(l => l instanceof L.Polyline));
-                map.fitBounds(group.getBounds().pad(0.1));
+                const polylines = routeLayers.filter(l => l instanceof L.Polyline);
+                if (polylines.length > 0) {
+                    const group = L.featureGroup(polylines);
+                    map.fitBounds(group.getBounds().pad(0.15));
+                }
             }
 
             sortAndDisplayRoutes();
 
-            // Scroll down to comparison Section
             setTimeout(() => {
                 document.getElementById('comparisonSection').scrollIntoView({ behavior: 'smooth' });
             }, 500);
+        }
+
+        function addRouteDecorations(route, color, isRecommended) {
+            const latlngs = route.coords.map(coord => [coord[1], coord[0]]);
+            if (latlngs.length < 2) return;
+
+            // 1. START & END MARKERS
+            const startPoint = latlngs[0];
+            const endPoint = latlngs[latlngs.length - 1];
+
+            // Custom Start Icon
+            L.marker(startPoint, {
+                icon: L.divIcon({
+                    className: 'start-marker',
+                    html: `<div style="width: 24px; height: 24px; background: white; border: 3px solid #16a34a; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; color: #16a34a; font-size: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.3);">A</div>`,
+                    iconSize: [24, 24],
+                    iconAnchor: [12, 12]
+                })
+            }).addTo(map).bindTooltip("START").addTo(map);
+
+            // Custom End Icon
+            L.marker(endPoint, {
+                icon: L.divIcon({
+                    className: 'end-marker',
+                    html: `<div style="width: 24px; height: 24px; background: #be123c; border: 3px solid white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; color: white; font-size: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.3);">B</div>`,
+                    iconSize: [24, 24],
+                    iconAnchor: [12, 12]
+                })
+            }).addTo(map).bindTooltip("DESTINATION").addTo(map);
+
+            // 2. DIRECTION MARKERS (only for recommended or on click)
+            if (route.directions && route.directions.length > 0) {
+                route.directions.forEach((step, idx) => {
+                    // Only show every 3rd step or major turns to avoid clutter
+                    const isMajorTurn = step.instruction.toLowerCase().includes('turn') || step.instruction.toLowerCase().includes('exit');
+                    if (isRecommended && (idx % 3 === 0 || isMajorTurn)) {
+                         const ratio = idx / Math.max(1, route.directions.length - 1);
+                         const coordIndex = Math.min(Math.floor(ratio * route.coords.length), route.coords.length - 1);
+                         const c = route.coords[coordIndex];
+                         const point = [c[1], c[0]];
+
+                         const turnIcon = L.divIcon({
+                             className: 'map-turn-icon',
+                             html: `<div style="width: 10px; height: 10px; background: white; border: 2px solid ${color}; border-radius: 50%;"></div>`,
+                             iconSize: [10, 10]
+                         });
+
+                         const marker = L.marker(point, { icon: turnIcon }).addTo(map);
+                         marker.bindTooltip(step.instruction, { 
+                             permanent: isRecommended && isMajorTurn && idx < 5, // Show first few labels permanently
+                             direction: 'right',
+                             className: 'map-instruction-label'
+                         });
+                         routeLayers.push(marker);
+                    }
+                });
+            }
+
+            // 3. DIRECTION ARROWS
+            addDirectionArrows(latlngs, color);
         }
 
         function generateDirectionsHtml(route, lineColor) {
@@ -1391,7 +1674,8 @@
         function sortAndDisplayRoutes() {
             if (!currentRoutes || currentRoutes.length === 0) return;
 
-            const sortKey = document.getElementById('sortRoutes').value;
+            const sortEl = document.getElementById('sortRoutes');
+            const sortKey = sortEl ? sortEl.value : 'wes';
             let indices = currentRoutes.map((_, i) => i);
 
             indices.sort((a, b) => {
@@ -1563,8 +1847,16 @@
                                 <span style="font-size: 16px;">💡</span> Why this route?
                             </div>
                             ${route.recommendation_reason}
+                            <button onclick="startNavigation(${idx})" style="margin-top: 15px; background: #f59e0b; color: white; border: none; padding: 10px; border-radius: 8px; font-weight: bold; cursor: pointer; width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px;">
+                                🚀 Start Navigation Mode
+                            </button>
                         </div>
-                        ` : ''}
+                        ` : (currentRoutes.find(r => r.recommended) ? `
+                        <div class="alternative-logic" style="background: #f8fafc; border: 1px solid #e2e8f0; color: #475569; padding: 10px; border-radius: 8px; margin: 15px 0; font-size: 11px;">
+                            <b>⚠️ Exposure Note:</b> This route involves <b>${Math.round(((route.avg_wes - currentRoutes.find(r => r.recommended).avg_wes) / currentRoutes.find(r => r.recommended).avg_wes) * 100)}% more</b> pollution than the recommended path.
+                            <button onclick="selectRouteOnMapOnly(${idx})" style="margin-top: 8px; background: white; border: 1px solid #cbd5e1; padding: 5px; border-radius: 5px; font-size: 10px; width: 100%; cursor: pointer;">Show on Map</button>
+                        </div>
+                        ` : '')}
                         
                         ${route.avg_pm25 ? `
                         <div class="pollutant-badges">
@@ -1634,108 +1926,143 @@
             }
         }
 
+        // Redundant - functionality moved to addRouteDecorations
         function addTurnMarkers(route, color, isRecommended) {
-            if (!route.directions || route.directions.length === 0) return;
-
-            route.directions.forEach((step, idx) => {
-                let point = null;
-
-                if (step.location && step.location.length === 2 && step.location[0] && step.location[1]) {
-                    point = [step.location[0], step.location[1]];
-                } else if (route.coords && route.coords.length > 0) {
-                    // Fallback approximation
-                    const ratio = idx / Math.max(1, route.directions.length - 1);
-                    const coordIndex = Math.min(Math.floor(ratio * route.coords.length), route.coords.length - 1);
-                    const c = route.coords[coordIndex];
-                    if (c && c.length >= 2) point = [c[1], c[0]];
-                }
-
-                if (point) {
-                    const isMajorTurn = step.instruction.toLowerCase().includes('turn') || step.instruction.toLowerCase().includes('merge');
-                    const opacity = isRecommended ? 0.9 : 0.6;
-                    const radius = (isRecommended && isMajorTurn) ? 6 : 4;
-
-                    const marker = L.circleMarker(point, {
-                        radius: radius,
-                        color: '#fff',
-                        fillColor: color,
-                        fillOpacity: opacity,
-                        weight: 2
-                    }).addTo(map);
-
-                    marker.bindTooltip(`<b>Step ${step.step}</b><br>${step.instruction}`, {
-                        direction: 'top',
-                        className: 'map-direction-tooltip'
-                    });
-
-                    routeLayers.push(marker);
-
-                    // For recommended route, occasionally add street name labels floating like Google Maps
-                    if (isRecommended) {
-                        let match = step.instruction.match(/on\s+([^,.]+)/i);
-                        let streetName = match ? match[1].trim() : '';
-
-                        if (streetName && streetName.length < 30) {
-                            const icon = L.divIcon({
-                                className: 'street-name-label',
-                                html: `<div style="background: white; border: 1px solid ${color}; color: #333; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: bold; white-space: nowrap; box-shadow: 0 1px 3px rgba(0,0,0,0.2); margin-top: 15px;">${streetName}</div>`,
-                                iconSize: [null, null]
-                            });
-                            const streetMarker = L.marker(point, { icon: icon }).addTo(map);
-                            routeLayers.push(streetMarker);
-                        }
-                    }
-                }
-            });
+             return;
         }
 
-        function selectRoute(index, cardElement) {
-            document.querySelectorAll('.comp-card').forEach(c => c.classList.remove('selected'));
-            if (cardElement) {
-                cardElement.classList.add('selected');
-                // ... rest of selectRoute
+        let navState = {
+            active: false,
+            routeIndex: -1,
+            stepIndex: 0
+        };
+
+        function startNavigation(index) {
+            const route = currentRoutes[index];
+            if (!route || !route.directions || !route.recommended) return; // ONLY allow navigation for recommended
+
+            navState = { active: true, routeIndex: index, stepIndex: 0 };
+            document.getElementById('navOverlay').style.display = 'flex';
+            document.querySelector('.main-grid').classList.add('nav-active');
+            
+            // CRITICAL: Wipe EVERYTHING from the map
+            routeLayers.forEach(l => map.removeLayer(l));
+            routeLayers = []; 
+            
+            // Re-draw ONLY the recommended route line
+            drawSingleRoute(index, true); 
+            updateNavDisplay();
+            
+            setTimeout(() => { map.invalidateSize(); }, 300);
+        }
+
+        function stopNavigation() {
+            navState.active = false;
+            document.getElementById('navOverlay').style.display = 'none';
+            document.querySelector('.main-grid').classList.remove('nav-active');
+            
+            // Restore all routes
+            displayRoutesWithColors(currentRoutes, document.getElementById('condition').value);
+            
+            setTimeout(() => { map.invalidateSize(); }, 300);
+        }
+
+        function changeNavStep(delta) {
+            const route = currentRoutes[navState.routeIndex];
+            const newIndex = navState.stepIndex + delta;
+            
+            if (newIndex >= 0 && newIndex < route.directions.length) {
+                navState.stepIndex = newIndex;
+                updateNavDisplay();
+            }
+        }
+
+        function updateNavDisplay() {
+            const route = currentRoutes[navState.routeIndex];
+            const step = route.directions[navState.stepIndex];
+            
+            const getIcon = (instr) => {
+                instr = instr.toLowerCase();
+                if (instr.includes('left')) return '↩️';
+                if (instr.includes('right')) return '↪️';
+                if (instr.includes('roundabout')) return '🔄';
+                if (instr.includes('destination')) return '📍';
+                return '⬆️';
+            };
+
+            document.getElementById('navIcon').textContent = getIcon(step.instruction);
+            document.getElementById('navText').innerHTML = step.instruction;
+            document.getElementById('navDistance').textContent = step.distance ? `${step.distance} km` : '';
+            
+            document.getElementById('navBack').disabled = navState.stepIndex === 0;
+            document.getElementById('navNext').disabled = navState.stepIndex === route.directions.length - 1;
+
+            // PAN MAP TO STEP
+            const ratio = navState.stepIndex / Math.max(1, route.directions.length - 1);
+            const coordIdx = Math.min(Math.floor(ratio * route.coords.length), route.coords.length - 1);
+            const point = [route.coords[coordIdx][1], route.coords[coordIdx][0]];
+            
+            map.flyTo(point, 17, { duration: 1.5 });
+            
+            // Add a temporary marker for the current turn
+            const turnMarker = L.circleMarker(point, {
+                radius: 12,
+                color: '#667eea',
+                fillColor: '#fff',
+                fillOpacity: 1,
+                weight: 5
+            }).addTo(map);
+            
+            routeLayers.push(turnMarker);
+        }
+
+        function drawSingleRoute(index, isNav = false) {
+            const route = currentRoutes[index];
+            const latlngs = route.coords.map(c => [c[1], c[0]]);
+            const color = route.recommended ? '#f59e0b' : '#2563eb';
+            
+            const poly = L.polyline(latlngs, {
+                color: color,
+                weight: isNav ? 12 : 8,
+                opacity: 1
+            }).addTo(map);
+            
+            routeLayers.push(poly);
+            if (!isNav) mainPolylines[index] = poly;
+            
+            // Add heatmap segments if available
+            if (route.point_aqi) {
+                route.point_aqi.forEach((p, i) => {
+                    if (i < route.point_aqi.length - 1) {
+                        const seg = [[p.coord[1], p.coord[0]], [route.point_aqi[i+1].coord[1], route.point_aqi[i+1].coord[0]]];
+                        const segPoly = L.polyline(seg, { color: getColorByWES(p.wes), weight: isNav ? 12 : 8 }).addTo(map);
+                        routeLayers.push(segPoly);
+                    }
+                });
             }
             
-            // Render specific verification markers on map
-            renderVerificationMarkers(index);
+            map.fitBounds(poly.getBounds().pad(0.2));
         }
 
-        function renderVerificationMarkers(index) {
-            const route = currentRoutes[index];
-            if (!route || !route.coords || route.coords.length < 2) return;
+        function selectRoute(index, element) {
+            // 1. UI Highlight
+            document.querySelectorAll('.comp-card').forEach(c => c.classList.remove('selected-card'));
+            if (element) element.classList.add('selected-card');
 
-            // Add labels at start and end
-            const start = [route.coords[0][1], route.coords[0][0]];
-            const end = [route.coords[route.coords.length-1][1], route.coords[route.coords.length-1][0]];
+            // 2. Map Update
+            routeLayers.forEach(l => map.removeLayer(l));
+            routeLayers = [];
+            drawSingleRoute(index);
 
-            const startLabel = L.marker(start, {
-                icon: L.divIcon({
-                    className: 'offset-label',
-                    html: `START (Offset: ${route.verification?.start_offset || 0}m)`,
-                    iconSize: [null, null],
-                    iconAnchor: [0, 20]
-                })
-            }).addTo(map);
-
-            const endLabel = L.marker(end, {
-                icon: L.divIcon({
-                    className: 'offset-label',
-                    html: `END (Offset: ${route.verification?.end_offset || 0}m)`,
-                    iconSize: [null, null],
-                    iconAnchor: [0, 20]
-                })
-            }).addTo(map);
-
-            routeLayers.push(startLabel, endLabel);
+            // 3. Scroll if needed (optional)
         }
 
-        function submitFeedback(event, index, isAccurate) {
-            event.stopPropagation();
-            const btnContainer = event.target.parentElement;
-            btnContainer.innerHTML = isAccurate ? '<span style="color: #16a34a; font-weight: bold;">✅ Thank you!</span>' : '<span style="color: #be123c; font-weight: bold;">❌ Noted. We will improve.</span>';
-            console.log(`Feedback for Route ${index}: ${isAccurate ? 'Accurate' : 'Inaccurate'}`);
-            // In a real app, send to backend
+        function selectRouteOnMapOnly(index) {
+            routeLayers.forEach(l => map.removeLayer(l));
+            routeLayers = [];
+            drawSingleRoute(index);
         }
+
         function toggleDirections(event, element) {
             // Don't stop propagation, allow the card to be selected when directions are toggled
             const list = element.nextElementSibling;
@@ -1904,7 +2231,7 @@
                 }
 
                 // 2. Fetch Validated AQI Data from our Backend (Fixes the 'Shanghai' issue)
-                const aqiUrl = `http://localhost:5000/api/aqi?lat=${lat}&lng=${lng}`;
+                const aqiUrl = `http://localhost:5001/api/aqi?lat=${lat}&lng=${lng}`;
                 const aqiRes = await fetch(aqiUrl);
                 const aqiData = await aqiRes.json();
 
@@ -2028,17 +2355,8 @@
             `;
         }
 
-        function toggleEvidence(event, element) {
-            event.stopPropagation();
-            const content = element.nextElementSibling;
-            if (content.classList.contains('expanded')) {
-                content.classList.remove('expanded');
-                element.innerHTML = '🔬 <span>Science Evidence</span> ▾';
-            } else {
-                content.classList.add('expanded');
-                element.innerHTML = '🔬 <span>Science Evidence</span> ▴';
-            }
-        }
+        // toggleEvidence moved up to maintain single definition
+
 
         initMap();
     </script>

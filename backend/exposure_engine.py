@@ -177,6 +177,7 @@ def calculate_safe_time(condition, aqi):
 
 
 def get_risk(wes):
+    if wes < 30:  return "Excellent"
     if wes < 50:  return "Safe"
     if wes < 100: return "Moderate"
     if wes < 150: return "High Risk"
@@ -184,10 +185,11 @@ def get_risk(wes):
 
 
 def get_risk_emoji(wes):
-    if wes < 50:  return "🟢 Safe"
-    if wes < 100: return "🟡 Moderate"
-    if wes < 150: return "🟠 High Risk"
-    return               "🔴 Dangerous"
+    if wes < 30:  return "🌿 [EXCELLENT]"
+    if wes < 50:  return "✅ [SAFE]"
+    if wes < 100: return "⚠️ [MODERATE]"
+    if wes < 150: return "🛑 [HIGH RISK]"
+    return               "💀 [DANGEROUS]"
 
 
 # ── DEMO / TEST ───────────────────────────────────────────────────
@@ -195,12 +197,12 @@ if __name__ == "__main__":
     print("=" * 70)
     print("WES DEMO — Same Air, Different Patients")
     print("Scenario: Heavy Traffic Junction")
-    print(f"PM2.5=120 µg/m³ | PM10=150 µg/m³ | NO2=80 µg/m³ | O3=40 µg/m³")
+    print(f"PM2.5=120 ug/m3 | PM10=150 ug/m3 | NO2=80 ug/m3 | O3=40 ug/m3")
     print("=" * 70)
 
     results = compare_patients(120, 150, 80, 40)
     for condition, data in results.items():
-        print(f"{condition.upper():15} → WES: {data['wes']:6.1f}  {data['risk']}")
+        print(f"{condition.upper():15} -> WES: {data['wes']:6.1f}  {data['risk']}")
 
     print("\n" + "=" * 70)
     print("Detailed Breakdown — ASTHMA Patient:")
