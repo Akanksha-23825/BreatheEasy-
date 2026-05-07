@@ -19,3 +19,9 @@ export const getForecast = (city) =>
 
 export const registerUser = (data) =>
     axios.post(`${BASE}/api/register`, data);
+
+export const getAlerts = (userId) =>
+    axios.get(`${BASE}/api/alerts/${userId}`);
+
+export const getHeatmap = (city) =>
+    axios.get(`${BASE}/api/heatmap/${city}`);

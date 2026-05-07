@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { registerUser } from '../api/api';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
@@ -14,8 +14,17 @@ export default function Register() {
     const [loginId, setLoginId] = useState('');
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
+    const [isMounted, setIsMounted] = useState(false);
+
+    useEffect(() => {
+        setIsMounted(true);
+    }, []);
 
     const handleRegister = async () => {
+        if (!form.username || !form.email || !form.age || !form.city) {
+            setError('Please fill in all required fields.');
+            return;
+        }
         setLoading(true);
         setError('');
         try {
@@ -24,13 +33,22 @@ export default function Register() {
             localStorage.setItem('city', form.city);
             navigate('/dashboard');
         } catch (e) {
-            setError(e.response?.data?.error || 'Registration failed');
+            console.error(e);
+            if (!e.response) {
+                setError('Cannot connect to server. Is the backend running?');
+            } else {
+                setError(e.response.data?.error || 'Registration failed');
+            }
         } finally {
             setLoading(false);
         }
     };
 
     const handleLogin = async () => {
+        if (!loginId) {
+            setError('Please enter your User ID.');
+            return;
+        }
         setLoading(true);
         setError('');
         try {
@@ -39,204 +57,372 @@ export default function Register() {
             localStorage.setItem('city', res.data.city);
             navigate('/dashboard');
         } catch (e) {
-            setError('User ID not found. Please check and try again.');
+            if (!e.response) {
+                setError('Cannot connect to server. Is the backend running?');
+            } else {
+                setError('User ID not found. Please check and try again.');
+            }
         } finally {
             setLoading(false);
         }
     };
 
     return (
-        <div style={styles.page}>
-            <div style={styles.card}>
-                <h1 style={styles.title}>
-                    BreatheEasy<span style={{ color: '#00d4aa' }}>+</span>
-                </h1>
-                <p style={styles.sub}>Your personalized air quality guardian</p>
+        <div style={styles.container}>
+            {/* Background Image with Overlay */}
+            <div style={styles.bgWrapper}>
+                <div style={styles.bgImage} />
+                <div style={styles.bgOverlay} />
+            </div>
 
-                {/* Toggle */}
-                <div style={styles.toggle}>
-                    <button
-                        style={{ ...styles.toggleBtn, ...(mode === 'register' ? styles.toggleActive : {}) }}
-                        onClick={() => { setMode('register'); setError(''); }}
-                    >
-                        Register
-                    </button>
-                    <button
-                        style={{ ...styles.toggleBtn, ...(mode === 'login' ? styles.toggleActive : {}) }}
-                        onClick={() => { setMode('login'); setError(''); }}
-                    >
-                        Login
-                    </button>
-                </div>
+            <div style={{...styles.content, opacity: isMounted ? 1 : 0}}>
+                <div className="glass" style={styles.card}>
+                    {/* Header */}
+                    <div style={styles.header}>
+                        <div style={styles.logoBadge}>BE+</div>
+                        <h1 style={styles.title}>
+                            BreatheEasy<span style={styles.accentText}>+</span>
+                        </h1>
+                        <p style={styles.subtitle}>Personalized Air Quality Intelligence</p>
+                    </div>
 
-                {error && <div style={styles.error}>{error}</div>}
-
-                {/* LOGIN FORM */}
-                {mode === 'login' && (
-                    <>
-                        <p style={{ color: '#8899aa', fontSize: 13 }}>
-                            Enter your User ID to continue. You received this when you registered.
-                        </p>
-                        <div style={styles.field}>
-                            <label style={styles.label}>USER ID</label>
-                            <input
-                                style={styles.input}
-                                type="number"
-                                placeholder="e.g. 1"
-                                value={loginId}
-                                onChange={e => setLoginId(e.target.value)}
-                            />
-                        </div>
+                    {/* Mode Toggle */}
+                    <div style={styles.toggleContainer}>
                         <button
-                            style={styles.btn}
-                            onClick={handleLogin}
-                            disabled={loading}
+                            style={{ 
+                                ...styles.toggleBtn, 
+                                ...(mode === 'register' ? styles.toggleActive : {}) 
+                            }}
+                            onClick={() => { setMode('register'); setError(''); }}
                         >
-                            {loading ? 'Logging in...' : 'Go to Dashboard →'}
+                            Create Account
                         </button>
-                    </>
-                )}
+                        <button
+                            style={{ 
+                                ...styles.toggleBtn, 
+                                ...(mode === 'login' ? styles.toggleActive : {}) 
+                            }}
+                            onClick={() => { setMode('login'); setError(''); }}
+                        >
+                            Sign In
+                        </button>
+                    </div>
 
-                {/* REGISTER FORM */}
-                {mode === 'register' && (
-                    <>
-                        {[
-                            { key: 'username', label: 'Username', type: 'text' },
-                            { key: 'email', label: 'Email', type: 'email' },
-                            { key: 'age', label: 'Age', type: 'number' },
-                        ].map(f => (
-                            <div key={f.key} style={styles.field}>
-                                <label style={styles.label}>{f.label}</label>
-                                <input
-                                    style={styles.input}
-                                    type={f.type}
-                                    value={form[f.key]}
-                                    onChange={e => setForm({ ...form, [f.key]: e.target.value })}
-                                />
+                    {error && <div style={styles.errorBox}>{error}</div>}
+
+                    {/* Form Section */}
+                    <div style={styles.formSection}>
+                        {mode === 'login' ? (
+                            <div className="animate-fade-in" style={styles.loginForm}>
+                                <div style={styles.inputGroup}>
+                                    <label style={styles.label}>USER ID</label>
+                                    <input
+                                        style={styles.input}
+                                        type="number"
+                                        placeholder="Enter your unique ID"
+                                        value={loginId}
+                                        onChange={e => setLoginId(e.target.value)}
+                                        onKeyPress={e => e.key === 'Enter' && handleLogin()}
+                                    />
+                                    <span style={styles.inputHint}>Your ID was provided during registration.</span>
+                                </div>
+                                <button
+                                    style={styles.submitBtn}
+                                    onClick={handleLogin}
+                                    disabled={loading}
+                                >
+                                    {loading ? (
+                                        <span style={styles.loaderText}>Signing in...</span>
+                                    ) : (
+                                        "Access Dashboard"
+                                    )}
+                                </button>
                             </div>
-                        ))}
+                        ) : (
+                            <div className="animate-fade-in" style={styles.registerForm}>
+                                <div style={styles.grid}>
+                                    <div style={styles.inputGroup}>
+                                        <label style={styles.label}>Full Name</label>
+                                        <input
+                                            style={styles.input}
+                                            type="text"
+                                            placeholder="John Doe"
+                                            value={form.username}
+                                            onChange={e => setForm({ ...form, username: e.target.value })}
+                                        />
+                                    </div>
+                                    <div style={styles.inputGroup}>
+                                        <label style={styles.label}>Email Address</label>
+                                        <input
+                                            style={styles.input}
+                                            type="email"
+                                            placeholder="john@example.com"
+                                            value={form.email}
+                                            onChange={e => setForm({ ...form, email: e.target.value })}
+                                        />
+                                    </div>
+                                    <div style={styles.inputGroup}>
+                                        <label style={styles.label}>Age</label>
+                                        <input
+                                            style={styles.input}
+                                            type="number"
+                                            placeholder="25"
+                                            value={form.age}
+                                            onChange={e => setForm({ ...form, age: e.target.value })}
+                                        />
+                                    </div>
+                                    <div style={styles.inputGroup}>
+                                        <label style={styles.label}>City</label>
+                                        <input
+                                            style={styles.input}
+                                            type="text"
+                                            placeholder="Bengaluru"
+                                            value={form.city}
+                                            onChange={e => setForm({ ...form, city: e.target.value })}
+                                        />
+                                    </div>
+                                </div>
 
-                        <div style={styles.field}>
-                            <label style={styles.label}>Health Condition</label>
-                            <select
-                                style={styles.input}
-                                value={form.health_condition}
-                                onChange={e => setForm({ ...form, health_condition: e.target.value })}
-                            >
-                                {['healthy', 'asthma', 'heart', 'pregnant', 'elderly'].map(c => (
-                                    <option key={c} value={c}>
-                                        {c.charAt(0).toUpperCase() + c.slice(1)}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
+                                <div style={styles.grid}>
+                                    <div style={styles.inputGroup}>
+                                        <label style={styles.label}>Health Condition</label>
+                                        <select
+                                            style={styles.input}
+                                            value={form.health_condition}
+                                            onChange={e => setForm({ ...form, health_condition: e.target.value })}
+                                        >
+                                            {['healthy', 'asthma', 'heart', 'pregnant', 'elderly'].map(c => (
+                                                <option key={c} value={c} style={{background: '#0f172a'}}>
+                                                    {c.charAt(0).toUpperCase() + c.slice(1)}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                    <div style={styles.inputGroup}>
+                                        <label style={styles.label}>Daily Outdoor Hours</label>
+                                        <input
+                                            style={styles.input}
+                                            type="number"
+                                            step="0.5"
+                                            value={form.daily_outdoor_hours}
+                                            onChange={e => setForm({ ...form, daily_outdoor_hours: parseFloat(e.target.value) })}
+                                        />
+                                    </div>
+                                </div>
 
-                        <div style={styles.field}>
-                            <label style={styles.label}>Daily Outdoor Hours</label>
-                            <input
-                                style={styles.input}
-                                type="number"
-                                step="0.5"
-                                value={form.daily_outdoor_hours}
-                                onChange={e => setForm({ ...form, daily_outdoor_hours: parseFloat(e.target.value) })}
-                            />
-                        </div>
+                                <button
+                                    style={styles.submitBtn}
+                                    onClick={handleRegister}
+                                    disabled={loading}
+                                >
+                                    {loading ? (
+                                        <span style={styles.loaderText}>Setting up Profile...</span>
+                                    ) : (
+                                        "Start Protecting My Health"
+                                    )}
+                                </button>
+                            </div>
+                        )}
+                    </div>
 
-                        <button
-                            style={styles.btn}
-                            onClick={handleRegister}
-                            disabled={loading}
-                        >
-                            {loading ? 'Setting up...' : 'Get Started →'}
-                        </button>
-                    </>
-                )}
+                    <div style={styles.footer}>
+                        <p style={styles.footerText}>
+                            Protecting over 50,000 users across 12 cities.
+                        </p>
+                    </div>
+                </div>
             </div>
         </div>
     );
 }
 
 const styles = {
-    page: {
+    container: {
+        position: 'relative',
         minHeight: '100vh',
+        width: '100vw',
+        overflowX: 'hidden',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        background: '#0a0f1e',
-        padding: 20,
+        padding: '2rem',
+    },
+    bgWrapper: {
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        zIndex: -1,
+    },
+    bgImage: {
+        width: '100%',
+        height: '100%',
+        backgroundImage: 'url(/hero-bg.png)',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        filter: 'brightness(0.6)',
+    },
+    bgOverlay: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        background: 'radial-gradient(circle at center, transparent, rgba(3, 7, 18, 0.9))',
+    },
+    content: {
+        width: '100%',
+        maxWidth: '520px',
+        transition: 'opacity 1s ease-in-out',
+        zIndex: 1,
     },
     card: {
-        background: '#111827',
-        border: '1px solid #1f2f4a',
-        borderRadius: 20,
-        padding: 40,
-        width: '100%',
-        maxWidth: 420,
+        borderRadius: '24px',
+        padding: '3rem',
         display: 'flex',
         flexDirection: 'column',
-        gap: 16,
+        gap: '2rem',
+    },
+    header: {
+        textAlign: 'center',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        gap: '0.75rem',
+    },
+    logoBadge: {
+        background: 'rgba(16, 185, 129, 0.2)',
+        color: '#10b981',
+        padding: '4px 12px',
+        borderRadius: '20px',
+        fontSize: '0.75rem',
+        fontWeight: 'bold',
+        letterSpacing: '1px',
+        border: '1px solid rgba(16, 185, 129, 0.3)',
+        marginBottom: '0.5rem',
     },
     title: {
-        fontFamily: "'Space Mono', monospace",
-        fontSize: 32,
-        fontWeight: 700,
-        color: '#e8edf5',
+        fontSize: '2.5rem',
+        fontWeight: '700',
+        color: '#f8fafc',
+        letterSpacing: '-1px',
+        margin: 0,
     },
-    sub: { color: '#8899aa', fontSize: 14, marginTop: -8 },
-    toggle: {
-        display: 'grid',
-        gridTemplateColumns: '1fr 1fr',
-        background: '#1a2235',
-        borderRadius: 10,
-        padding: 4,
-        gap: 4,
+    accentText: {
+        color: '#10b981',
+    },
+    subtitle: {
+        color: '#94a3b8',
+        fontSize: '1rem',
+        fontWeight: '400',
+    },
+    toggleContainer: {
+        display: 'flex',
+        background: 'rgba(30, 41, 59, 0.5)',
+        borderRadius: '14px',
+        padding: '4px',
+        border: '1px solid rgba(51, 65, 85, 0.5)',
     },
     toggleBtn: {
-        background: 'transparent',
+        flex: 1,
+        padding: '12px',
+        borderRadius: '10px',
         border: 'none',
-        borderRadius: 8,
-        padding: '10px',
-        color: '#8899aa',
+        background: 'transparent',
+        color: '#94a3b8',
+        fontSize: '0.9rem',
+        fontWeight: '600',
         cursor: 'pointer',
-        fontSize: 14,
-        fontFamily: "'DM Sans', sans-serif",
-        fontWeight: 500,
+        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
     },
     toggleActive: {
-        background: '#00d4aa',
-        color: '#0a0f1e',
-        fontWeight: 700,
+        background: '#10b981',
+        color: '#030712',
+        boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)',
     },
-    error: {
-        background: '#ff475722',
-        border: '1px solid #ff475744',
-        borderRadius: 8,
-        padding: '10px 14px',
-        color: '#ff4757',
-        fontSize: 13,
+    formSection: {
+        display: 'flex',
+        flexDirection: 'column',
     },
-    field: { display: 'flex', flexDirection: 'column', gap: 6 },
-    label: { fontSize: 12, color: '#8899aa', letterSpacing: 1 },
+    loginForm: {
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '1.5rem',
+    },
+    registerForm: {
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '1.5rem',
+    },
+    grid: {
+        display: 'grid',
+        gridTemplateColumns: '1fr 1fr',
+        gap: '1.25rem',
+    },
+    inputGroup: {
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '0.5rem',
+    },
+    label: {
+        fontSize: '0.75rem',
+        fontWeight: '600',
+        color: '#94a3b8',
+        textTransform: 'uppercase',
+        letterSpacing: '0.05em',
+        marginLeft: '4px',
+    },
     input: {
-        background: '#1a2235',
-        border: '1px solid #1f2f4a',
-        borderRadius: 8,
-        padding: '10px 14px',
-        color: '#e8edf5',
-        fontSize: 14,
+        background: 'rgba(15, 23, 42, 0.4)',
+        border: '1px solid rgba(51, 65, 85, 0.5)',
+        borderRadius: '12px',
+        padding: '14px 16px',
+        color: '#f8fafc',
+        fontSize: '1rem',
         outline: 'none',
-        fontFamily: "'DM Sans', sans-serif",
+        transition: 'all 0.2s ease',
+        width: '100%',
     },
-    btn: {
-        background: '#00d4aa',
-        color: '#0a0f1e',
+    inputHint: {
+        fontSize: '0.7rem',
+        color: '#64748b',
+        marginTop: '4px',
+        marginLeft: '4px',
+    },
+    submitBtn: {
+        background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+        color: '#030712',
         border: 'none',
-        borderRadius: 10,
-        padding: '14px',
-        fontSize: 15,
-        fontWeight: 700,
+        borderRadius: '14px',
+        padding: '18px',
+        fontSize: '1.1rem',
+        fontWeight: '700',
         cursor: 'pointer',
-        marginTop: 8,
-        fontFamily: "'Space Mono', monospace",
+        marginTop: '1rem',
+        transition: 'all 0.3s ease',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        boxShadow: '0 10px 15px -3px rgba(16, 185, 129, 0.2)',
+    },
+    errorBox: {
+        background: 'rgba(239, 68, 68, 0.1)',
+        border: '1px solid rgba(239, 68, 68, 0.2)',
+        borderRadius: '12px',
+        padding: '12px 16px',
+        color: '#f87171',
+        fontSize: '0.85rem',
+        textAlign: 'center',
+    },
+    footer: {
+        textAlign: 'center',
+        borderTop: '1px solid rgba(51, 65, 85, 0.3)',
+        paddingTop: '1.5rem',
+    },
+    footerText: {
+        fontSize: '0.8rem',
+        color: '#64748b',
+        fontStyle: 'italic',
     },
 };

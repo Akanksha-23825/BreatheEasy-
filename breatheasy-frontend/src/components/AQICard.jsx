@@ -2,14 +2,14 @@ import { useEffect, useState } from 'react';
 import { getAQI } from '../api/api';
 
 const getRiskColor = (aqi) => {
-    if (aqi <= 50) return '#00d4aa';
-    if (aqi <= 100) return '#ffa502';
-    if (aqi <= 150) return '#ff6b35';
-    return '#ff4757';
+    if (aqi <= 50) return '#10b981'; // emerald
+    if (aqi <= 100) return '#f59e0b'; // amber
+    if (aqi <= 150) return '#f97316'; // orange
+    return '#ef4444'; // red
 };
 
 const getRiskLabel = (aqi) => {
-    if (aqi <= 50) return 'Good';
+    if (aqi <= 50) return 'Healthy';
     if (aqi <= 100) return 'Moderate';
     if (aqi <= 150) return 'Unhealthy';
     return 'Hazardous';
@@ -26,81 +26,114 @@ export default function AQICard({ city }) {
             .finally(() => setLoading(false));
     }, [city]);
 
-    if (loading) return <div style={styles.card}>Loading AQI...</div>;
+    if (loading) return <div className="card-premium">Loading AQI Data...</div>;
     if (!data) return null;
 
     const color = getRiskColor(data.aqi);
 
     return (
-        <div style={styles.card}>
-            <p style={styles.label}>AIR QUALITY INDEX</p>
-            <div style={{ ...styles.aqiNumber, color }}>{data.aqi}</div>
-            <div style={{ ...styles.badge, background: color + '22', color }}>
-                {getRiskLabel(data.aqi)}
+        <div className="card-premium animate-fade-in" style={styles.card}>
+            <div style={styles.topRow}>
+                <p className="label-caps">Air Quality Index</p>
+                <div className="badge-premium" style={{ background: color + '15', color, borderColor: color + '30' }}>
+                    <div style={{ width: 6, height: 6, borderRadius: '50%', background: color }} />
+                    {getRiskLabel(data.aqi)}
+                </div>
             </div>
+
+            <div style={styles.mainContent}>
+                <div style={{ ...styles.aqiNumber, color }}>{data.aqi}</div>
+                <div style={styles.location}>
+                    <span style={styles.pin}>📍</span> {data.city}
+                </div>
+            </div>
+
             <div style={styles.pollutants}>
                 {[
-                    { label: 'PM2.5', val: data.pm25 },
-                    { label: 'PM10', val: data.pm10 },
-                    { label: 'NO₂', val: data.no2 },
-                    { label: 'O₃', val: data.o3 },
+                    { label: 'PM2.5', val: data.pm25, unit: 'µg/m³' },
+                    { label: 'PM10', val: data.pm10, unit: 'µg/m³' },
+                    { label: 'NO₂', val: data.no2, unit: 'ppb' },
+                    { label: 'O₃', val: data.o3, unit: 'ppb' },
                 ].map(p => (
                     <div key={p.label} style={styles.pollutant}>
                         <span style={styles.pLabel}>{p.label}</span>
-                        <span style={styles.pVal}>{p.val}</span>
+                        <div style={styles.pValRow}>
+                            <span style={styles.pVal}>{p.val || '--'}</span>
+                            <span style={styles.pUnit}>{p.unit}</span>
+                        </div>
                     </div>
                 ))}
             </div>
-            <p style={styles.city}>📍 {data.city}</p>
         </div>
     );
 }
 
 const styles = {
     card: {
-        background: '#111827',
-        border: '1px solid #1f2f4a',
-        borderRadius: 16,
-        padding: 24,
         display: 'flex',
         flexDirection: 'column',
-        gap: 12,
+        gap: '1.5rem',
     },
-    label: {
-        fontSize: 11,
-        letterSpacing: 2,
-        color: '#8899aa',
-        fontFamily: "'Space Mono', monospace",
-    },
-    aqiNumber: {
-        fontSize: 72,
-        fontWeight: 700,
-        fontFamily: "'Space Mono', monospace",
-        lineHeight: 1,
-    },
-    badge: {
-        display: 'inline-block',
-        padding: '4px 12px',
-        borderRadius: 20,
-        fontSize: 13,
-        fontWeight: 600,
-        width: 'fit-content',
-    },
-    pollutants: {
-        display: 'grid',
-        gridTemplateColumns: '1fr 1fr',
-        gap: 8,
-        marginTop: 8,
-    },
-    pollutant: {
-        background: '#1a2235',
-        borderRadius: 8,
-        padding: '8px 12px',
+    topRow: {
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
     },
-    pLabel: { fontSize: 12, color: '#8899aa' },
-    pVal: { fontSize: 14, fontWeight: 600, fontFamily: "'Space Mono', monospace" },
-    city: { fontSize: 12, color: '#8899aa', marginTop: 4 },
-};
+    mainContent: {
+        textAlign: 'center',
+        padding: '1rem 0',
+    },
+    aqiNumber: {
+        fontSize: '5rem',
+        fontWeight: '800',
+        lineHeight: 1,
+        letterSpacing: '-2px',
+        fontFamily: "'Outfit', sans-serif",
+    },
+    location: {
+        fontSize: '0.9rem',
+        color: '#94a3b8',
+        marginTop: '0.5rem',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: '4px',
+    },
+    pin: {
+        opacity: 0.7,
+    },
+    pollutants: {
+        display: 'grid',
+        gridTemplateColumns: '1fr 1fr',
+        gap: '0.75rem',
+    },
+    pollutant: {
+        background: 'rgba(30, 41, 59, 0.4)',
+        border: '1px solid rgba(51, 65, 85, 0.2)',
+        borderRadius: '12px',
+        padding: '12px',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '4px',
+    },
+    pLabel: {
+        fontSize: '0.7rem',
+        color: '#64748b',
+        fontWeight: '600',
+        textTransform: 'uppercase',
+    },
+    pValRow: {
+        display: 'flex',
+        alignItems: 'baseline',
+        gap: '4px',
+    },
+    pVal: {
+        fontSize: '1.1rem',
+        fontWeight: '700',
+        color: '#f1f5f9',
+    },
+    pUnit: {
+        fontSize: '0.65rem',
+        color: '#64748b',
+    },
+};

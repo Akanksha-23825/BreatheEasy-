@@ -1,6 +1,6 @@
 from flask import jsonify, request
 from app import app
-from models import db, HourlyReading, User, ExposureLog
+from models import db, HourlyReading, User, ExposureLog, AdminAlert, UnsafeRoad
 from cpcb_client import fetch_hourly
 from waqi_client import get_current_aqi
 from exposure_engine import calculate_wes, calculate_el, calculate_safe_time, update_ces, get_weekly_trend, check_ces_alert
@@ -110,9 +110,122 @@ def register():
     return jsonify({
         'user_id': user.id,
         'username': user.username,
+        'role': user.role,
         'vf': vf,
         'message': 'User registered successfully'
     }), 201
+
+
+@app.route('/api/admin/login', methods=['POST'])
+def admin_login():
+    d = request.json
+    email = d.get('email')
+    password = d.get('password') # In a real app, use hashed passwords
+    
+    user = User.query.filter_by(email=email, role='admin').first()
+    if user and user.password == password:
+        return jsonify({
+            'user_id': user.id,
+            'username': user.username,
+            'role': user.role,
+            'message': 'Admin login successful'
+        }), 200
+    return jsonify({'error': 'Invalid admin credentials'}), 401
+
+
+@app.route('/api/admin/stats')
+def get_admin_stats():
+    total_users = User.query.count()
+    active_alerts = AdminAlert.query.filter_by(is_active=True).count()
+    unsafe_roads = UnsafeRoad.query.count()
+    
+    # Calculate average risk levels
+    logs = ExposureLog.query.order_by(ExposureLog.date.desc()).limit(100).all()
+    risk_counts = {'LOW': 0, 'MEDIUM': 0, 'HIGH': 0, 'CRITICAL': 0}
+    for log in logs:
+        risk = log.risk_level.upper() if log.risk_level else 'LOW'
+        if risk in risk_counts:
+            risk_counts[risk] += 1
+            
+    return jsonify({
+        'total_users': total_users,
+        'active_alerts': active_alerts,
+        'unsafe_roads': unsafe_roads,
+        'risk_distribution': risk_counts
+    })
+
+
+@app.route('/api/admin/heatmap-advanced/<city>')
+def get_advanced_heatmap(city):
+    """Enhanced heatmap with Predicted Human Exposure Risk."""
+    from cpcb_client import fetch_hourly
+    data = fetch_hourly(city)
+    stations = []
+    
+    # Mock some population density data for 'Unique Feature'
+    # In a real app, this would come from a geospatial database
+    import random
+    
+    for rec in data:
+        aqi = rec.get('aqi', 0)
+        # Exposure Risk = (AQI * Population Density Factor) + Trend Factor
+        pop_density = random.uniform(0.5, 2.0) 
+        exposure_risk = aqi * pop_density
+        
+        stations.append({
+            'station': rec.get('station_id', 'Unknown'),
+            'aqi': aqi,
+            'exposure_risk': round(exposure_risk, 2),
+            'pop_density_level': 'High' if pop_density > 1.5 else 'Medium' if pop_density > 1.0 else 'Low',
+            'lat': rec.get('lat', 12.9716),
+            'lng': rec.get('lng', 77.5946),
+        })
+    return jsonify({'city': city, 'stations': stations})
+
+
+@app.route('/api/admin/alerts', methods=['GET', 'POST'])
+def manage_alerts():
+    if request.method == 'POST':
+        d = request.json
+        alert = AdminAlert(
+            title=d['title'],
+            message=d['message'],
+            city=d.get('city', 'All'),
+            zone=d.get('zone', 'General'),
+            severity=d.get('severity', 'medium')
+        )
+        db.session.add(alert)
+        db.session.commit()
+        return jsonify({'message': 'Alert broadcasted', 'id': alert.id}), 201
+    
+    alerts = AdminAlert.query.order_by(AdminAlert.created_at.desc()).all()
+    return jsonify([{
+        'id': a.id, 'title': a.title, 'message': a.message,
+        'city': a.city, 'zone': a.zone, 'severity': a.severity,
+        'created_at': str(a.created_at), 'is_active': a.is_active
+    } for a in alerts])
+
+
+@app.route('/api/admin/roads', methods=['GET', 'POST'])
+def manage_roads():
+    if request.method == 'POST':
+        d = request.json
+        road = UnsafeRoad(
+            road_name=d['road_name'],
+            lat=d['lat'],
+            lng=d['lng'],
+            radius=d.get('radius', 0.5),
+            reason=d.get('reason', 'High Pollution')
+        )
+        db.session.add(road)
+        db.session.commit()
+        return jsonify({'message': 'Road marked unsafe', 'id': road.id}), 201
+    
+    roads = UnsafeRoad.query.all()
+    return jsonify([{
+        'id': r.id, 'road_name': r.road_name, 'lat': r.lat, 'lng': r.lng,
+        'radius': r.radius, 'reason': r.reason, 'marked_at': str(r.marked_at)
+    } for r in roads])
 
 
 @app.route('/api/user/<int:user_id>')
@@ -218,7 +331,7 @@ def get_advisory(user_id):
 
     trend = get_weekly_trend(user_id)
     ces_alert = check_ces_alert(trend)
-    safest_window = find_safest_window(user.city)
+    safest_window = find_safest_window(user.city, user.health_condition)
     forecast_data = get_forecast_advisory(user.city)
 
     return jsonify({
@@ -243,3 +356,114 @@ def get_advisory(user_id):
 def get_forecast_route(city):
     data = get_forecast_advisory(city)
     return jsonify(data)
+
+@app.route('/api/alerts/<int:user_id>')
+def get_alerts(user_id):
+    user = User.query.get_or_404(user_id)
+    waqi_data = get_current_aqi(user.city)
+
+    if not waqi_data:
+        return jsonify({'alerts': []})
+
+    wes = calculate_wes(
+        waqi_data['pm25'], waqi_data['pm10'],
+        waqi_data['no2'], waqi_data['o3'],
+        user.health_condition, user.vf
+    )
+    el_result = calculate_el(wes, user.daily_outdoor_hours)
+    trend = get_weekly_trend(user_id)
+    ces_alert = check_ces_alert(trend)
+
+    alerts = []
+
+    if waqi_data['aqi'] > 150:
+        alerts.append({
+            'type': 'aqi_spike',
+            'severity': 'high',
+            'message': f"AQI is {waqi_data['aqi']} — Stay indoors today.",
+            'icon': '🚨'
+        })
+
+    if el_result['el'] > 300:
+        alerts.append({
+            'type': 'high_el',
+            'severity': 'high',
+            'message': f"Your exposure load is HIGH ({el_result['el']}). Limit outdoor time.",
+            'icon': '⚠️'
+        })
+
+    if waqi_data['pm25'] > 60:
+        alerts.append({
+            'type': 'pm25',
+            'severity': 'medium',
+            'message': f"PM2.5 levels are elevated ({waqi_data['pm25']} µg/m³). Wear a mask.",
+            'icon': '😷'
+        })
+
+    if ces_alert:
+        alerts.append({
+            'type': 'ces_rising',
+            'severity': 'medium',
+            'message': ces_alert,
+            'icon': '📈'
+        })
+
+    if not alerts:
+        alerts.append({
+            'type': 'all_clear',
+            'severity': 'low',
+            'message': 'Air quality is acceptable for your health condition today.',
+            'icon': '✅'
+        })
+
+    return jsonify({'alerts': alerts, 'count': len(alerts)})
+
+
+@app.route('/api/heatmap/<city>')
+def get_heatmap(city):
+    """Return all station AQI data for heatmap display."""
+    from cpcb_client import fetch_hourly
+    data = fetch_hourly(city)
+    stations = []
+    for rec in data:
+        if rec.get('pm25') or rec.get('aqi'):
+            stations.append({
+                'station': rec.get('station_id', 'Unknown'),
+                'aqi': rec.get('aqi', 0),
+                'pm25': rec.get('pm25', 0),
+                'pm10': rec.get('pm10', 0),
+                'no2': rec.get('no2', 0),
+                'lat': rec.get('lat'),
+                'lng': rec.get('lng'),
+            })
+    return jsonify({'city': city, 'stations': stations})
+
+
+from osm_router import recommend_route, get_waqi_data, get_region, REGION_AQI_FALLBACK
+
+@app.route('/api/route', methods=['POST'])
+def get_route():
+    data = request.json
+    for field in ['start_lat', 'start_lng', 'end_lat', 'end_lng']:
+        if field not in data:
+            return jsonify({'error': f'Missing field: {field}'}), 400
+
+    try:
+        routes = recommend_route(
+            data['start_lat'], data['start_lng'],
+            data['end_lat'],   data['end_lng'],
+            data.get('condition', 'normal'),
+            data.get('start_name', ''),
+            data.get('end_name', '')
+        )
+        if not routes:
+            return jsonify({'error': 'No routes found'}), 404
+
+        return jsonify({
+            'success': True,
+            'condition': data.get('condition', 'normal'),
+            'routes': routes,
+            'total_routes': len(routes)
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500

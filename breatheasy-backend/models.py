@@ -1,4 +1,5 @@
 from flask_sqlalchemy import SQLAlchemy
+from datetime import datetime
 
 db = SQLAlchemy()
 
@@ -7,6 +8,8 @@ class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
+    password = db.Column(db.String(120), nullable=True) # Simple password for admin/users
+    role = db.Column(db.String(20), default='user') # 'user' or 'admin'
     age = db.Column(db.Integer, nullable=False)
     health_condition = db.Column(db.String(30), nullable=False)
     vf = db.Column(db.Float, nullable=False)
@@ -26,16 +29,21 @@ class HourlyReading(db.Model):
     no2 = db.Column(db.Float)
     o3 = db.Column(db.Float)
     aqi = db.Column(db.Integer)
+    lat = db.Column(db.Float)
+    lng = db.Column(db.Float)
 
     def to_dict(self):
         return {
             'city': self.city,
+            'station_id': self.station_id,
             'timestamp': str(self.timestamp),
             'pm25': self.pm25,
             'pm10': self.pm10,
             'no2': self.no2,
             'o3': self.o3,
-            'aqi': self.aqi
+            'aqi': self.aqi,
+            'lat': self.lat,
+            'lng': self.lng
         }
 
 class ExposureLog(db.Model):
@@ -60,6 +68,27 @@ class RouteCache(db.Model):
     dest_lng = db.Column(db.Float)
     recommended_route_json = db.Column(db.Text)
     score = db.Column(db.Float)
+
+class AdminAlert(db.Model):
+    __tablename__ = 'admin_alerts'
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(200))
+    message = db.Column(db.Text)
+    city = db.Column(db.String(80))
+    zone = db.Column(db.String(100))
+    severity = db.Column(db.String(20))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    is_active = db.Column(db.Boolean, default=True)
+
+class UnsafeRoad(db.Model):
+    __tablename__ = 'unsafe_roads'
+    id = db.Column(db.Integer, primary_key=True)
+    road_name = db.Column(db.String(200))
+    lat = db.Column(db.Float)
+    lng = db.Column(db.Float)
+    radius = db.Column(db.Float, default=0.5) # area radius in km
+    reason = db.Column(db.String(200))
+    marked_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 class MLModel(db.Model):
     __tablename__ = 'ml_models'

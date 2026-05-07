@@ -41,14 +41,69 @@ def fetch_hourly(city: str) -> list:
         return get_mock_data(city)
 
 
-def parse_ogd_response(raw: dict, city: str) -> list:
-    """
-    OGD returns one row per pollutant per station.
-    We group by station, then collect all pollutants into one record.
-    """
-    entries = raw.get('records', [])
+# def parse_ogd_response(raw: dict, city: str) -> list:
+#     """
+#     OGD returns one row per pollutant per station.
+#     We group by station, then collect all pollutants into one record.
+#     """
+#     entries = raw.get('records', [])
 
-    # Group by station
+#     # Group by station
+#     stations = {}
+#     for rec in entries:
+#         station = rec.get('station', 'Unknown')
+#         if station not in stations:
+#             stations[station] = {
+#                 'station': station,
+#                 'city': city,
+#                 'last_update': rec.get('last_update', ''),
+#                 'latitude': rec.get('latitude'),
+#                 'longitude': rec.get('longitude'),
+#                 'pm25': 0.0,
+#                 'pm10': 0.0,
+#                 'no2': 0.0,
+#                 'o3': 0.0,
+#                 'so2': 0.0,
+#                 'co': 0.0,
+#             }
+
+#         pollutant = rec.get('pollutant_id', '').upper()
+#         avg = safe_float(rec.get('avg_value'))
+
+#         # Map pollutant names to our fields
+#         if pollutant == 'PM2.5':
+#             stations[station]['pm25'] = avg
+#         elif pollutant == 'PM10':
+#             stations[station]['pm10'] = avg
+#         elif pollutant == 'NO2':
+#             stations[station]['no2'] = avg
+#         elif pollutant in ('OZONE', 'O3'):
+#             stations[station]['o3'] = avg
+#         elif pollutant == 'SO2':
+#             stations[station]['so2'] = avg
+#         elif pollutant == 'CO':
+#             stations[station]['co'] = avg
+
+#     # Convert grouped stations to our standard format
+#     records = []
+#     for station_name, data in stations.items():
+#         aqi = calculate_aqi(data['pm25'], data['pm10'])
+#         records.append({
+#             'timestamp': datetime.now().isoformat(),
+#             'city': city,
+#             'station_id': station_name,
+#             'pm25': data['pm25'],
+#             'pm10': data['pm10'],
+#             'no2': data['no2'],
+#             'o3': data['o3'],
+#             'aqi': aqi
+#         })
+
+#     return records
+
+
+def parse_ogd_response(raw: dict, city: str) -> list:
+    entries = raw.get('records', [])
     stations = {}
     for rec in entries:
         station = rec.get('station', 'Unknown')
@@ -57,20 +112,13 @@ def parse_ogd_response(raw: dict, city: str) -> list:
                 'station': station,
                 'city': city,
                 'last_update': rec.get('last_update', ''),
-                'latitude': rec.get('latitude'),
-                'longitude': rec.get('longitude'),
-                'pm25': 0.0,
-                'pm10': 0.0,
-                'no2': 0.0,
-                'o3': 0.0,
-                'so2': 0.0,
-                'co': 0.0,
+                'lat': safe_float(rec.get('latitude')),
+                'lng': safe_float(rec.get('longitude')),
+                'pm25': 0.0, 'pm10': 0.0,
+                'no2': 0.0, 'o3': 0.0,
             }
-
         pollutant = rec.get('pollutant_id', '').upper()
         avg = safe_float(rec.get('avg_value'))
-
-        # Map pollutant names to our fields
         if pollutant == 'PM2.5':
             stations[station]['pm25'] = avg
         elif pollutant == 'PM10':
@@ -79,12 +127,7 @@ def parse_ogd_response(raw: dict, city: str) -> list:
             stations[station]['no2'] = avg
         elif pollutant in ('OZONE', 'O3'):
             stations[station]['o3'] = avg
-        elif pollutant == 'SO2':
-            stations[station]['so2'] = avg
-        elif pollutant == 'CO':
-            stations[station]['co'] = avg
 
-    # Convert grouped stations to our standard format
     records = []
     for station_name, data in stations.items():
         aqi = calculate_aqi(data['pm25'], data['pm10'])
@@ -92,13 +135,14 @@ def parse_ogd_response(raw: dict, city: str) -> list:
             'timestamp': datetime.now().isoformat(),
             'city': city,
             'station_id': station_name,
+            'lat': data['lat'],
+            'lng': data['lng'],
             'pm25': data['pm25'],
             'pm10': data['pm10'],
             'no2': data['no2'],
             'o3': data['o3'],
             'aqi': aqi
         })
-
     return records
 
 

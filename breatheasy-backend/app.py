@@ -3,6 +3,7 @@ from flask_cors import CORS
 from config import Config
 from models import db, HourlyReading, User
 from cpcb_client import fetch_hourly
+from advisory import get_recommended_window
 from apscheduler.schedulers.background import BackgroundScheduler
 import atexit
 
