@@ -1,66 +1,227 @@
 import React from 'react';
-import { NavLink } from 'react-router-dom';
-import { 
-  FiMap, 
-  FiAlertTriangle, 
-  FiActivity, 
-  FiTrendingUp, 
-  FiLogOut,
-  FiGrid
-} from 'react-icons/fi';
+import { NavLink, useNavigate } from 'react-router-dom';
+
+const navItems = [
+  { name: 'Overview', path: '/admin/dashboard', icon: '⊞' },
+  { name: 'Risk Heatmap', path: '/admin/heatmap', icon: '🗺' },
+  { name: 'Health Alerts', path: '/admin/alerts', icon: '⚠' },
+  { name: 'Route Monitor', path: '/admin/routes', icon: '〜' },
+  { name: 'Analytics', path: '/admin/analytics', icon: '📈' },
+];
 
 const AdminSidebar = () => {
-  const navItems = [
-    { name: 'Overview', path: '/admin/dashboard', icon: <FiGrid /> },
-    { name: 'Risk Heatmap', path: '/admin/heatmap', icon: <FiMap /> },
-    { name: 'Health Alerts', path: '/admin/alerts', icon: <FiAlertTriangle /> },
-    { name: 'Route Monitor', path: '/admin/routes', icon: <FiActivity /> },
-    { name: 'Analytics', path: '/admin/analytics', icon: <FiTrendingUp /> },
-  ];
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    localStorage.removeItem('adminUser');
+    localStorage.removeItem('adminToken');
+    navigate('/');
+  };
 
   return (
-    <div className="fixed left-0 top-0 h-full w-64 bg-slate-900/40 backdrop-blur-xl border-r border-white/10 p-6 flex flex-col z-50">
-      <div className="flex items-center gap-3 mb-10 px-2">
-        <div className="w-10 h-10 bg-gradient-to-tr from-red-500 to-orange-400 rounded-xl flex items-center justify-center text-white text-xl font-bold shadow-lg shadow-red-500/20">
-          BE
-        </div>
+    <div style={styles.sidebar}>
+      {/* Logo */}
+      <div style={styles.logoRow}>
+        <div style={styles.logoBox}>BE</div>
         <div>
-          <h1 className="text-white font-bold text-lg leading-tight">Admin</h1>
-          <p className="text-slate-400 text-xs uppercase tracking-widest">BreatheEasy+</p>
+          <div style={styles.logoTitle}>BreatheEasy+</div>
+          <div style={styles.logoSub}>ADMIN TERMINAL</div>
         </div>
       </div>
 
-      <nav className="flex-1 space-y-2">
+      {/* Status badge */}
+      <div style={styles.statusBadge}>
+        <span style={styles.statusDot} />
+        System Live
+      </div>
+
+      {/* Nav links */}
+      <nav style={styles.nav}>
         {navItems.map((item) => (
           <NavLink
             key={item.path}
             to={item.path}
-            className={({ isActive }) => `
-              flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300
-              ${isActive 
-                ? 'bg-gradient-to-r from-red-500/20 to-orange-500/20 text-red-400 border border-red-500/30' 
-                : 'text-slate-400 hover:bg-white/5 hover:text-white'
-              }
-            `}
+            style={({ isActive }) => ({
+              ...styles.navItem,
+              ...(isActive ? styles.navItemActive : {}),
+            })}
           >
-            <span className="text-xl">{item.icon}</span>
-            <span className="font-medium">{item.name}</span>
+            <span style={styles.navIcon}>{item.icon}</span>
+            <span>{item.name}</span>
           </NavLink>
         ))}
       </nav>
 
-      <button 
-        onClick={() => {
-          localStorage.removeItem('adminToken');
-          window.location.href = '/admin/login';
-        }}
-        className="mt-auto flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:bg-red-500/10 hover:text-red-400 transition-all"
-      >
-        <FiLogOut className="text-xl" />
-        <span className="font-medium">Logout</span>
+      {/* Spacer */}
+      <div style={{ flex: 1 }} />
+
+      {/* Admin badge */}
+      <div style={styles.adminBadge}>
+        <div style={styles.adminAvatar}>AD</div>
+        <div>
+          <div style={styles.adminName}>SuperAdmin</div>
+          <div style={styles.adminRole}>Administrator</div>
+        </div>
+      </div>
+
+      {/* Logout */}
+      <button onClick={handleLogout} style={styles.logoutBtn}>
+        ⎋ &nbsp;Sign Out
       </button>
     </div>
   );
+};
+
+const styles = {
+  sidebar: {
+    position: 'fixed',
+    left: 0,
+    top: 0,
+    height: '100vh',
+    width: '240px',
+    background: 'rgba(10, 12, 22, 0.95)',
+    backdropFilter: 'blur(24px)',
+    borderRight: '1px solid rgba(255,255,255,0.07)',
+    display: 'flex',
+    flexDirection: 'column',
+    padding: '1.5rem',
+    zIndex: 100,
+    gap: '0.5rem',
+  },
+  logoRow: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px',
+    marginBottom: '1rem',
+  },
+  logoBox: {
+    width: '40px',
+    height: '40px',
+    background: 'linear-gradient(135deg, #dc2626, #ea580c)',
+    borderRadius: '12px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    color: '#fff',
+    fontWeight: '900',
+    fontSize: '0.95rem',
+    boxShadow: '0 4px 16px rgba(220,38,38,0.35)',
+    flexShrink: 0,
+  },
+  logoTitle: {
+    color: '#f8fafc',
+    fontWeight: '800',
+    fontSize: '0.95rem',
+    fontFamily: "'Inter', sans-serif",
+    lineHeight: 1.2,
+  },
+  logoSub: {
+    color: '#475569',
+    fontSize: '0.6rem',
+    fontWeight: '700',
+    letterSpacing: '0.12em',
+    textTransform: 'uppercase',
+  },
+  statusBadge: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    background: 'rgba(16,185,129,0.08)',
+    border: '1px solid rgba(16,185,129,0.15)',
+    borderRadius: '10px',
+    padding: '8px 12px',
+    color: '#10b981',
+    fontSize: '0.75rem',
+    fontWeight: '700',
+    letterSpacing: '0.05em',
+    marginBottom: '0.75rem',
+  },
+  statusDot: {
+    width: '7px',
+    height: '7px',
+    background: '#10b981',
+    borderRadius: '50%',
+    boxShadow: '0 0 6px #10b981',
+    animation: 'pulse 2s infinite',
+    flexShrink: 0,
+  },
+  nav: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '4px',
+  },
+  navItem: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px',
+    padding: '10px 14px',
+    borderRadius: '12px',
+    color: '#64748b',
+    fontSize: '0.875rem',
+    fontWeight: '600',
+    textDecoration: 'none',
+    transition: 'all 0.2s ease',
+    fontFamily: "'Inter', sans-serif",
+  },
+  navItemActive: {
+    background: 'rgba(220,38,38,0.12)',
+    color: '#f87171',
+    border: '1px solid rgba(220,38,38,0.2)',
+  },
+  navIcon: {
+    fontSize: '1.1rem',
+    width: '20px',
+    textAlign: 'center',
+  },
+  adminBadge: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '10px',
+    background: 'rgba(255,255,255,0.04)',
+    border: '1px solid rgba(255,255,255,0.07)',
+    borderRadius: '14px',
+    padding: '10px 12px',
+    marginBottom: '8px',
+  },
+  adminAvatar: {
+    width: '34px',
+    height: '34px',
+    borderRadius: '50%',
+    background: 'linear-gradient(135deg, #dc2626, #ea580c)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    color: '#fff',
+    fontSize: '0.75rem',
+    fontWeight: '900',
+    flexShrink: 0,
+  },
+  adminName: {
+    color: '#f8fafc',
+    fontSize: '0.82rem',
+    fontWeight: '700',
+    fontFamily: "'Inter', sans-serif",
+  },
+  adminRole: {
+    color: '#475569',
+    fontSize: '0.68rem',
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: '0.05em',
+  },
+  logoutBtn: {
+    background: 'none',
+    border: '1px solid rgba(248,113,113,0.2)',
+    borderRadius: '12px',
+    padding: '10px 14px',
+    color: '#f87171',
+    fontSize: '0.85rem',
+    fontWeight: '600',
+    cursor: 'pointer',
+    textAlign: 'left',
+    transition: 'all 0.2s ease',
+    fontFamily: "'Inter', sans-serif",
+  },
 };
 
 export default AdminSidebar;

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import { registerUser } from '../api/api';
+import { registerUser, loginUser } from '../api/api';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+
 
 export default function Register() {
     const navigate = useNavigate();
@@ -9,9 +9,11 @@ export default function Register() {
     const [form, setForm] = useState({
         username: '', email: '', age: '',
         health_condition: 'healthy',
-        city: 'Bengaluru', daily_outdoor_hours: 2
+        city: 'Bengaluru', daily_outdoor_hours: 2,
+        password: ''
     });
-    const [loginId, setLoginId] = useState('');
+    const [loginUsername, setLoginUsername] = useState('');
+    const [loginPassword, setLoginPassword] = useState('');
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const [isMounted, setIsMounted] = useState(false);
@@ -21,7 +23,7 @@ export default function Register() {
     }, []);
 
     const handleRegister = async () => {
-        if (!form.username || !form.email || !form.age || !form.city) {
+        if (!form.username || !form.email || !form.age || !form.city || !form.password) {
             setError('Please fill in all required fields.');
             return;
         }
@@ -45,22 +47,22 @@ export default function Register() {
     };
 
     const handleLogin = async () => {
-        if (!loginId) {
-            setError('Please enter your User ID.');
+        if (!loginUsername || !loginPassword) {
+            setError('Please enter both your Username and Password.');
             return;
         }
         setLoading(true);
         setError('');
         try {
-            const res = await axios.get(`http://127.0.0.1:5000/api/user/${loginId}`);
-            localStorage.setItem('user_id', res.data.id);
+            const res = await loginUser({ username: loginUsername, password: loginPassword });
+            localStorage.setItem('user_id', res.data.user_id);
             localStorage.setItem('city', res.data.city);
             navigate('/dashboard');
         } catch (e) {
             if (!e.response) {
                 setError('Cannot connect to server. Is the backend running?');
             } else {
-                setError('User ID not found. Please check and try again.');
+                setError(e.response.data?.error || 'Invalid username or password.');
             }
         } finally {
             setLoading(false);
@@ -115,16 +117,26 @@ export default function Register() {
                         {mode === 'login' ? (
                             <div className="animate-fade-in" style={styles.loginForm}>
                                 <div style={styles.inputGroup}>
-                                    <label style={styles.label}>USER ID</label>
+                                    <label style={styles.label}>Username</label>
                                     <input
                                         style={styles.input}
-                                        type="number"
-                                        placeholder="Enter your unique ID"
-                                        value={loginId}
-                                        onChange={e => setLoginId(e.target.value)}
+                                        type="text"
+                                        placeholder="Enter your username"
+                                        value={loginUsername}
+                                        onChange={e => setLoginUsername(e.target.value)}
                                         onKeyPress={e => e.key === 'Enter' && handleLogin()}
                                     />
-                                    <span style={styles.inputHint}>Your ID was provided during registration.</span>
+                                </div>
+                                <div style={styles.inputGroup}>
+                                    <label style={styles.label}>Password</label>
+                                    <input
+                                        style={styles.input}
+                                        type="password"
+                                        placeholder="Enter your password"
+                                        value={loginPassword}
+                                        onChange={e => setLoginPassword(e.target.value)}
+                                        onKeyPress={e => e.key === 'Enter' && handleLogin()}
+                                    />
                                 </div>
                                 <button
                                     style={styles.submitBtn}
@@ -142,11 +154,11 @@ export default function Register() {
                             <div className="animate-fade-in" style={styles.registerForm}>
                                 <div style={styles.grid}>
                                     <div style={styles.inputGroup}>
-                                        <label style={styles.label}>Full Name</label>
+                                        <label style={styles.label}>Username</label>
                                         <input
                                             style={styles.input}
                                             type="text"
-                                            placeholder="John Doe"
+                                            placeholder="Choose a username"
                                             value={form.username}
                                             onChange={e => setForm({ ...form, username: e.target.value })}
                                         />
@@ -208,6 +220,17 @@ export default function Register() {
                                             onChange={e => setForm({ ...form, daily_outdoor_hours: parseFloat(e.target.value) })}
                                         />
                                     </div>
+                                </div>
+
+                                <div style={styles.inputGroup}>
+                                    <label style={styles.label}>Password</label>
+                                    <input
+                                        style={styles.input}
+                                        type="password"
+                                        placeholder="Create a password"
+                                        value={form.password}
+                                        onChange={e => setForm({ ...form, password: e.target.value })}
+                                    />
                                 </div>
 
                                 <button

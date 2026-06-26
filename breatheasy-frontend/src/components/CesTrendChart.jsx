@@ -32,43 +32,44 @@ export default function CesTrendChart({ userId }) {
                 <div style={styles.chartWrapper}>
                     <ResponsiveContainer width="100%" height={240}>
                         <LineChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.05)" />
+                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(15, 23, 42, 0.06)" />
                             <XAxis
                                 dataKey="date"
                                 axisLine={false}
                                 tickLine={false}
-                                tick={{ fill: '#64748b', fontSize: 10 }}
+                                tick={{ fill: 'var(--text-dim)', fontSize: 10, fontWeight: 500 }}
                                 tickFormatter={d => {
                                     const date = new Date(d);
                                     return date.toLocaleDateString('en-US', { weekday: 'short' });
                                 }}
                             />
-                            <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 10 }} />
+                            <YAxis axisLine={false} tickLine={false} tick={{ fill: 'var(--text-dim)', fontSize: 10, fontWeight: 500 }} />
                             <Tooltip
                                 contentStyle={{
-                                    background: '#0f172a',
-                                    border: '1px solid rgba(51, 65, 85, 0.5)',
+                                    background: 'var(--surface)',
+                                    border: '1px solid var(--border)',
                                     borderRadius: '12px',
-                                    boxShadow: '0 10px 15px -3px rgba(0,0,0,0.5)',
+                                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05)',
+                                    color: 'var(--text)',
                                 }}
-                                itemStyle={{ fontSize: '12px', fontWeight: '600' }}
-                                labelStyle={{ color: '#94a3b8', marginBottom: '4px', fontSize: '10px' }}
+                                itemStyle={{ fontSize: '12px', fontWeight: '600', color: 'var(--text)' }}
+                                labelStyle={{ color: 'var(--text-dim)', marginBottom: '4px', fontSize: '10px', fontWeight: '600' }}
                             />
                             <Line
                                 type="monotone"
                                 dataKey="el"
-                                stroke="#3b82f6"
+                                stroke="#14B8A6"
                                 strokeWidth={3}
-                                dot={{ fill: '#3b82f6', strokeWidth: 2, r: 4, stroke: '#030712' }}
+                                dot={{ fill: '#14B8A6', strokeWidth: 2, r: 4, stroke: '#FFFFFF' }}
                                 activeDot={{ r: 6, strokeWidth: 0 }}
                                 name="Daily Load"
                             />
                             <Line
                                 type="monotone"
                                 dataKey="ces"
-                                stroke="#f59e0b"
+                                stroke="#0F766E"
                                 strokeWidth={3}
-                                dot={{ fill: '#f59e0b', strokeWidth: 2, r: 4, stroke: '#030712' }}
+                                dot={{ fill: '#0F766E', strokeWidth: 2, r: 4, stroke: '#FFFFFF' }}
                                 activeDot={{ r: 6, strokeWidth: 0 }}
                                 name="Cumulative (CES)"
                             />
@@ -94,8 +95,8 @@ const styles = {
     miniAlert: {
         fontSize: '0.7rem',
         fontWeight: '700',
-        color: '#f59e0b',
-        background: 'rgba(245, 158, 11, 0.1)',
+        color: '#F59E0B',
+        background: 'rgba(245, 158, 11, 0.12)',
         padding: '2px 8px',
         borderRadius: '6px',
     },
@@ -104,9 +105,9 @@ const styles = {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        background: 'rgba(30, 41, 59, 0.2)',
+        background: 'var(--surface2)',
         borderRadius: '16px',
-        border: '1px dashed rgba(51, 65, 85, 0.3)',
+        border: '1px dashed var(--border)',
     },
     chartWrapper: {
         paddingTop: '1rem',

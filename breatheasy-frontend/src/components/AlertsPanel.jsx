@@ -39,15 +39,15 @@ export default function AlertsPanel({ userId }) {
                             style={{
                                 ...styles.alert,
                                 borderColor: alert.severity === 'high'
-                                    ? '#ff475744'
+                                    ? 'rgba(239, 68, 68, 0.15)'
                                     : alert.severity === 'medium'
-                                        ? '#ffa50244'
-                                        : '#00d4aa44',
+                                        ? 'rgba(245, 158, 11, 0.15)'
+                                        : 'rgba(34, 197, 94, 0.15)',
                                 background: alert.severity === 'high'
-                                    ? '#ff475711'
+                                    ? 'rgba(239, 68, 68, 0.05)'
                                     : alert.severity === 'medium'
-                                        ? '#ffa50211'
-                                        : '#00d4aa11',
+                                        ? 'rgba(245, 158, 11, 0.05)'
+                                        : 'rgba(34, 197, 94, 0.05)',
                             }}
                         >
                             <span style={styles.icon}>{alert.icon}</span>
@@ -65,8 +65,8 @@ const styles = {
         position: 'relative',
     },
     bell: {
-        background: '#1a2235',
-        border: '1px solid #1f2f4a',
+        background: 'var(--surface)',
+        border: '1px solid var(--border)',
         borderRadius: 10,
         padding: '8px 14px',
         fontSize: 18,
@@ -77,7 +77,7 @@ const styles = {
         position: 'absolute',
         top: -6,
         right: -6,
-        background: '#ff4757',
+        background: '#EF4444',
         color: 'white',
         borderRadius: '50%',
         width: 18,
@@ -92,8 +92,8 @@ const styles = {
         position: 'absolute',
         right: 0,
         top: 48,
-        background: '#111827',
-        border: '1px solid #1f2f4a',
+        background: 'var(--surface)',
+        border: '1px solid var(--border)',
         borderRadius: 14,
         padding: 16,
         width: 300,
@@ -101,14 +101,15 @@ const styles = {
         display: 'flex',
         flexDirection: 'column',
         gap: 10,
-        boxShadow: '0 8px 32px #00000066',
+        boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -4px rgba(0, 0, 0, 0.05)',
     },
     title: {
         fontSize: 11,
         letterSpacing: 2,
-        color: '#8899aa',
-        fontFamily: "'Space Mono', monospace",
+        color: 'var(--text-dim)',
+        fontFamily: "var(--font-body)",
         marginBottom: 4,
+        fontWeight: '700',
     },
     alert: {
         border: '1px solid',
@@ -119,6 +120,6 @@ const styles = {
         gap: 10,
     },
     icon: { fontSize: 18, flexShrink: 0 },
-    msg: { fontSize: 13, color: '#e8edf5', lineHeight: 1.5 },
-    empty: { fontSize: 13, color: '#8899aa' },
+    msg: { fontSize: 13, color: 'var(--text)', lineHeight: 1.5 },
+    empty: { fontSize: 13, color: 'var(--text-dim)' },
 };

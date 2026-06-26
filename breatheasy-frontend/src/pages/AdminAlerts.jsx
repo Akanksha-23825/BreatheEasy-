@@ -1,143 +1,193 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { FiSend, FiAlertCircle, FiClock, FiMapPin } from 'react-icons/fi';
+
+const severityConfig = {
+  high:   { label: 'Critical', color: '#ef4444', bg: 'rgba(239,68,68,0.08)',   border: 'rgba(239,68,68,0.18)',   icon: '🔴' },
+  medium: { label: 'Warning',  color: '#f59e0b', bg: 'rgba(245,158,11,0.08)',  border: 'rgba(245,158,11,0.18)',  icon: '🟡' },
+  low:    { label: 'Info',     color: '#10b981', bg: 'rgba(16,185,129,0.08)',   border: 'rgba(16,185,129,0.18)',  icon: '🟢' },
+};
 
 const AdminAlerts = () => {
   const [alerts, setAlerts] = useState([]);
   const [newAlert, setNewAlert] = useState({ title: '', message: '', zone: '', severity: 'medium' });
   const [loading, setLoading] = useState(true);
+  const [sending, setSending] = useState(false);
+  const [success, setSuccess] = useState(false);
 
-  useEffect(() => {
-    fetchAlerts();
-  }, []);
+  useEffect(() => { fetchAlerts(); }, []);
 
   const fetchAlerts = async () => {
     try {
       const res = await axios.get('http://127.0.0.1:5000/api/admin/alerts');
       setAlerts(res.data);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
+    } catch (err) { console.error(err); }
+    finally { setLoading(false); }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setSending(true);
     try {
       await axios.post('http://127.0.0.1:5000/api/admin/alerts', newAlert);
       setNewAlert({ title: '', message: '', zone: '', severity: 'medium' });
+      setSuccess(true);
+      setTimeout(() => setSuccess(false), 3000);
       fetchAlerts();
-    } catch (err) {
-      alert("Failed to broadcast alert");
-    }
+    } catch { alert('Failed to broadcast alert'); }
+    finally { setSending(false); }
   };
 
+  const sev = severityConfig;
+
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-      {/* Alert Composition */}
-      <div className="lg:col-span-1 space-y-6">
-        <div className="bg-white/5 border border-white/10 p-8 rounded-3xl backdrop-blur-md">
-          <div className="flex items-center gap-3 mb-6">
-            <FiSend className="text-red-500 text-xl" />
-            <h3 className="text-xl font-bold text-white">Broadcast Advisory</h3>
+    <div style={styles.layout}>
+      {/* Compose Panel */}
+      <div style={styles.composePanel}>
+        <div style={styles.composeHeader}>
+          <div style={styles.composeIcon}>📡</div>
+          <div>
+            <h3 style={styles.composeTitle}>Broadcast Advisory</h3>
+            <p style={styles.composeSub}>Send alerts to all users</p>
           </div>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="text-xs text-slate-400 uppercase font-bold tracking-wider mb-2 block">Alert Title</label>
-              <input 
-                value={newAlert.title}
-                onChange={(e) => setNewAlert({...newAlert, title: e.target.value})}
-                placeholder="e.g. Asthma Spike Detected"
-                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-red-500/50"
-                required
-              />
-            </div>
-            <div>
-              <label className="text-xs text-slate-400 uppercase font-bold tracking-wider mb-2 block">Zone / Region</label>
-              <input 
-                value={newAlert.zone}
-                onChange={(e) => setNewAlert({...newAlert, zone: e.target.value})}
-                placeholder="e.g. Bengaluru East"
-                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-red-500/50"
-                required
-              />
-            </div>
-            <div>
-              <label className="text-xs text-slate-400 uppercase font-bold tracking-wider mb-2 block">Severity</label>
-              <select 
-                value={newAlert.severity}
-                onChange={(e) => setNewAlert({...newAlert, severity: e.target.value})}
-                className="w-full bg-slate-900 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-red-500/50"
-              >
-                <option value="low">Informational (Low)</option>
-                <option value="medium">Warning (Medium)</option>
-                <option value="high">Critical (High)</option>
-              </select>
-            </div>
-            <div>
-              <label className="text-xs text-slate-400 uppercase font-bold tracking-wider mb-2 block">Message</label>
-              <textarea 
-                value={newAlert.message}
-                onChange={(e) => setNewAlert({...newAlert, message: e.target.value})}
-                rows="4"
-                placeholder="Describe the advisory and recommended actions..."
-                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-red-500/50"
-                required
-              ></textarea>
-            </div>
-            <button className="w-full bg-red-600 hover:bg-red-500 text-white font-bold py-4 rounded-xl transition-all shadow-lg shadow-red-600/20">
-              Broadcast to All Users
-            </button>
-          </form>
         </div>
+
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          <label style={styles.label}>Alert Title</label>
+          <input
+            value={newAlert.title}
+            onChange={e => setNewAlert({ ...newAlert, title: e.target.value })}
+            placeholder="e.g. Asthma Spike Detected"
+            style={styles.input}
+            required
+          />
+
+          <label style={styles.label}>Zone / Region</label>
+          <input
+            value={newAlert.zone}
+            onChange={e => setNewAlert({ ...newAlert, zone: e.target.value })}
+            placeholder="e.g. Bengaluru East"
+            style={styles.input}
+            required
+          />
+
+          <label style={styles.label}>Severity</label>
+          <select
+            value={newAlert.severity}
+            onChange={e => setNewAlert({ ...newAlert, severity: e.target.value })}
+            style={styles.select}
+          >
+            <option value="low">🟢  Informational (Low)</option>
+            <option value="medium">🟡  Warning (Medium)</option>
+            <option value="high">🔴  Critical (High)</option>
+          </select>
+
+          <label style={styles.label}>Message</label>
+          <textarea
+            value={newAlert.message}
+            onChange={e => setNewAlert({ ...newAlert, message: e.target.value })}
+            rows={4}
+            placeholder="Describe the advisory and recommended actions..."
+            style={{ ...styles.input, resize: 'vertical', minHeight: '100px' }}
+            required
+          />
+
+          {success && (
+            <div style={styles.successBanner}>
+              ✅ Alert broadcasted to all users!
+            </div>
+          )}
+
+          <button type="submit" style={sending ? { ...styles.broadcastBtn, opacity: 0.6 } : styles.broadcastBtn} disabled={sending}>
+            {sending ? '📡 Broadcasting...' : '📡 Broadcast to All Users'}
+          </button>
+        </form>
       </div>
 
-      {/* Alert Feed */}
-      <div className="lg:col-span-2 space-y-6">
-        <h3 className="text-xl font-bold text-white flex items-center gap-2">
-          <FiClock className="text-slate-400" />
-          Active Advisory History
-        </h3>
-        
+      {/* Feed */}
+      <div style={styles.feedPanel}>
+        <h3 style={styles.feedTitle}>📋 Advisory History</h3>
         {loading ? (
-          <div className="text-slate-400">Loading history...</div>
+          <p style={{ color: '#475569' }}>Loading history...</p>
+        ) : alerts.length === 0 ? (
+          <p style={{ color: '#334155', fontStyle: 'italic' }}>No advisories broadcasted yet.</p>
         ) : (
-          <div className="space-y-4">
-            {alerts.length === 0 && <p className="text-slate-500 italic">No advisories broadcasted yet.</p>}
-            {alerts.map((alert) => (
-              <div key={alert.id} className="bg-white/5 border border-white/10 p-6 rounded-3xl backdrop-blur-md flex items-start gap-4">
-                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-2xl shrink-0
-                  ${alert.severity === 'high' ? 'bg-red-500/10 text-red-500' : 
-                    alert.severity === 'medium' ? 'bg-orange-500/10 text-orange-500' : 'bg-emerald-500/10 text-emerald-500'}
-                `}>
-                  <FiAlertCircle />
-                </div>
-                <div className="flex-1">
-                  <div className="flex justify-between items-start mb-1">
-                    <h4 className="text-lg font-bold text-white">{alert.title}</h4>
-                    <span className="text-xs text-slate-500">{new Date(alert.created_at).toLocaleString()}</span>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            {alerts.map(alert => {
+              const s = sev[alert.severity] || sev.low;
+              return (
+                <div key={alert.id} style={{ ...styles.alertCard, background: s.bg, border: `1px solid ${s.border}` }}>
+                  <div style={styles.alertTop}>
+                    <span style={styles.alertIcon}>{s.icon}</span>
+                    <div style={{ flex: 1 }}>
+                      <div style={styles.alertTitleRow}>
+                        <span style={styles.alertTitle}>{alert.title}</span>
+                        <span style={{ ...styles.severityBadge, color: s.color, background: s.bg, border: `1px solid ${s.border}` }}>
+                          {s.label}
+                        </span>
+                      </div>
+                      <div style={styles.alertMeta}>
+                        📍 {alert.zone} &nbsp;·&nbsp; {new Date(alert.created_at).toLocaleString()}
+                      </div>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2 text-xs text-slate-400 mb-3">
-                    <FiMapPin className="text-red-400" />
-                    <span>Target: <span className="text-slate-200 font-medium">{alert.zone}</span></span>
-                    <span className="mx-2">•</span>
-                    <span className={`px-2 py-0.5 rounded text-[10px] uppercase font-bold
-                      ${alert.severity === 'high' ? 'bg-red-500/20 text-red-400' : 
-                        alert.severity === 'medium' ? 'bg-orange-500/20 text-orange-400' : 'bg-emerald-500/20 text-emerald-400'}
-                    `}>
-                      {alert.severity}
-                    </span>
-                  </div>
-                  <p className="text-slate-300 text-sm leading-relaxed">{alert.message}</p>
+                  <p style={styles.alertMsg}>{alert.message}</p>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
     </div>
   );
+};
+
+const styles = {
+  layout: { display: 'grid', gridTemplateColumns: '360px 1fr', gap: '1.5rem' },
+  composePanel: {
+    background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)',
+    borderRadius: '20px', padding: '1.75rem',
+  },
+  composeHeader: { display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '1.5rem' },
+  composeIcon: {
+    width: '42px', height: '42px', background: 'rgba(239,68,68,0.1)',
+    border: '1px solid rgba(239,68,68,0.2)', borderRadius: '12px',
+    display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.25rem', flexShrink: 0,
+  },
+  composeTitle: { color: '#f1f5f9', fontSize: '1rem', fontWeight: '800', margin: 0, fontFamily: "'Inter', sans-serif" },
+  composeSub: { color: '#475569', fontSize: '0.75rem', fontWeight: '500', margin: 0 },
+  label: { color: '#64748b', fontSize: '0.72rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.06em' },
+  input: {
+    background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.09)',
+    borderRadius: '12px', padding: '12px 16px', color: '#f1f5f9', fontSize: '0.875rem',
+    outline: 'none', fontFamily: "'Inter', sans-serif", width: '100%', boxSizing: 'border-box',
+  },
+  select: {
+    background: '#0d1117', border: '1px solid rgba(255,255,255,0.09)',
+    borderRadius: '12px', padding: '12px 16px', color: '#f1f5f9', fontSize: '0.875rem',
+    outline: 'none', fontFamily: "'Inter', sans-serif", width: '100%', cursor: 'pointer',
+  },
+  broadcastBtn: {
+    background: 'linear-gradient(135deg, #dc2626, #ea580c)',
+    border: 'none', borderRadius: '14px', padding: '14px',
+    color: '#fff', fontWeight: '800', fontSize: '0.9rem',
+    cursor: 'pointer', fontFamily: "'Inter', sans-serif",
+    boxShadow: '0 4px 16px rgba(220,38,38,0.25)', transition: 'all 0.2s ease',
+  },
+  successBanner: {
+    background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.2)',
+    borderRadius: '12px', padding: '12px', color: '#10b981',
+    fontSize: '0.85rem', fontWeight: '600', textAlign: 'center',
+  },
+  feedPanel: { display: 'flex', flexDirection: 'column', gap: '1rem' },
+  feedTitle: { color: '#f1f5f9', fontSize: '1rem', fontWeight: '800', margin: '0 0 0.5rem 0', fontFamily: "'Inter', sans-serif" },
+  alertCard: { borderRadius: '16px', padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '10px' },
+  alertTop: { display: 'flex', alignItems: 'flex-start', gap: '12px' },
+  alertIcon: { fontSize: '1.25rem', flexShrink: 0 },
+  alertTitleRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', marginBottom: '4px' },
+  alertTitle: { color: '#f1f5f9', fontWeight: '800', fontSize: '0.95rem', fontFamily: "'Inter', sans-serif" },
+  severityBadge: { fontSize: '0.68rem', fontWeight: '700', padding: '3px 10px', borderRadius: '99px', textTransform: 'uppercase', letterSpacing: '0.05em' },
+  alertMeta: { color: '#475569', fontSize: '0.75rem', fontWeight: '500' },
+  alertMsg: { color: '#94a3b8', fontSize: '0.85rem', lineHeight: 1.6, margin: 0 },
 };
 
 export default AdminAlerts;

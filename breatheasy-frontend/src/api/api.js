@@ -25,3 +25,23 @@ export const getAlerts = (userId) =>
 
 export const getHeatmap = (city) =>
     axios.get(`${BASE}/api/heatmap/${city}`);
+
+export const getMLAdvisory = (userId) =>
+    axios.get(`${BASE}/api/ml-advisory/${userId}`);
+
+export const loginUser = (data) =>
+    axios.post(`${BASE}/api/login`, data);
+
+// Admin endpoints
+export const adminLogin = (data) =>
+    axios.post(`${BASE}/api/admin/login`, data);
+
+export const adminRegister = (data) =>
+    axios.post(`${BASE}/api/admin/register`, data);
+
+export const getUserProfile = (userId) =>
+    axios.get(`${BASE}/api/user/${userId}`);
+
+export const updateUserProfile = (userId, data) =>
+    axios.put(`${BASE}/api/user/${userId}`, data);
+

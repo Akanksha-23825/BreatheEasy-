@@ -1,10 +1,10 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import Register from './pages/Register';
+import LandingPage from './pages/LandingPage';
 import Dashboard from './pages/Dashboard';
 import Tools from './pages/Tools';
+import RouteRecommendation from './pages/route-recommendation/RouteRecommendation';
 
 // Admin Pages
-import AdminLogin from './pages/AdminLogin';
 import AdminLayout from './components/AdminLayout';
 import AdminDashboard from './pages/AdminDashboard';
 import AdminHeatmap from './pages/AdminHeatmap';
@@ -16,13 +16,16 @@ export default function App() {
     return (
         <BrowserRouter>
             <Routes>
+                {/* Landing — User & Admin login/register */}
+                <Route path="/" element={<LandingPage />} />
+
                 {/* User Routes */}
-                <Route path="/" element={<Register />} />
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/tools" element={<Tools />} />
+                <Route path="/route-recommendation" element={<RouteRecommendation />} />
 
                 {/* Admin Routes */}
-                <Route path="/admin/login" element={<AdminLogin />} />
+                <Route path="/admin/login" element={<Navigate to="/" />} />
                 <Route path="/admin" element={<AdminLayout />}>
                     <Route index element={<Navigate to="/admin/dashboard" />} />
                     <Route path="dashboard" element={<AdminDashboard />} />

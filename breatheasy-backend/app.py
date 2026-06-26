@@ -1,3 +1,5 @@
+
+from datetime import datetime
 from flask import Flask
 from flask_cors import CORS
 from config import Config
@@ -30,7 +32,7 @@ def ingest_all_cities():
                 reading = HourlyReading(
                     city=city,
                     station_id=rec.get('station_id', 'UNKNOWN'),
-                    timestamp=rec['timestamp'],
+                    timestamp=datetime.fromisoformat(rec['timestamp']) if isinstance(rec['timestamp'], str) else rec['timestamp'],
                     pm25=rec['pm25'],
                     pm10=rec['pm10'],
                     no2=rec['no2'],
@@ -44,6 +46,9 @@ def ingest_all_cities():
 # Start scheduler
 scheduler = BackgroundScheduler()
 scheduler.add_job(ingest_all_cities, 'interval', hours=1)
+# Schedule PELM model retraining every Sunday at 2 AM
+from ml_engine import retrain_all_users
+scheduler.add_job(retrain_all_users, 'cron', day_of_week='sun', hour=2, minute=0)
 scheduler.start()
 atexit.register(lambda: scheduler.shutdown())
 

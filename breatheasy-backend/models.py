@@ -99,3 +99,4 @@ class MLModel(db.Model):
     feature_cols = db.Column(db.Text)
     model_blob = db.Column(db.LargeBinary)
     mae_score = db.Column(db.Float)
+    rmse_score = db.Column(db.Float)

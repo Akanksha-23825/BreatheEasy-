@@ -4,11 +4,11 @@ import { getAQI } from '../api/api';
 import AQIHeatmap from '../components/AQIHeatmap';
 
 const CONDITIONS = [
-    { key: 'healthy', label: 'Healthy', vf: 1.0, color: '#10b981' },
-    { key: 'asthma', label: 'Asthma', vf: 1.5, color: '#f59e0b' },
-    { key: 'heart', label: 'Heart Disease', vf: 1.4, color: '#ef4444' },
-    { key: 'pregnant', label: 'Pregnancy', vf: 1.3, color: '#8b5cf6' },
-    { key: 'elderly', label: 'Elderly', vf: 1.6, color: '#3b82f6' },
+    { key: 'healthy', label: 'Healthy', vf: 1.0, color: '#22C55E' },
+    { key: 'asthma', label: 'Asthma', vf: 1.5, color: '#F59E0B' },
+    { key: 'heart', label: 'Heart Disease', vf: 1.4, color: '#EF4444' },
+    { key: 'pregnant', label: 'Pregnancy', vf: 1.3, color: '#0EA5E9' },
+    { key: 'elderly', label: 'Elderly', vf: 1.6, color: '#0F766E' },
 ];
 
 const SENSITIVITY = {
@@ -47,9 +47,9 @@ function calcSafe(condition, aqi) {
 }
 
 function getRisk(el) {
-    if (el <= 250) return { label: 'Low', color: '#10b981' };
-    if (el <= 500) return { label: 'Moderate', color: '#f59e0b' };
-    return { label: 'High', color: '#ef4444' };
+    if (el <= 250) return { label: 'Low', color: '#22C55E' };
+    if (el <= 500) return { label: 'Moderate', color: '#F59E0B' };
+    return { label: 'High', color: '#EF4444' };
 }
 
 export default function Tools() {
@@ -70,10 +70,7 @@ export default function Tools() {
     }, [city]);
 
     return (
-        <div style={styles.container}>
-             {/* Ambient Background */}
-            <div style={styles.ambientBlob} />
-
+        <div className="user-theme-container" style={styles.container}>
             <div style={{...styles.page, opacity: isMounted ? 1 : 0}}>
 
                 {/* ── Header ── */}
@@ -82,7 +79,7 @@ export default function Tools() {
                         <div style={styles.logoBadge}>BE+</div>
                         <div>
                             <h1 style={styles.logo}>
-                                BreatheEasy<span style={{ color: '#10b981' }}>+</span>
+                                BreatheEasy<span style={{ color: 'var(--accent2)' }}>+</span>
                             </h1>
                             <p style={styles.tagline}>Advanced Research & Simulation</p>
                         </div>
@@ -93,7 +90,7 @@ export default function Tools() {
                 </div>
 
                 {/* ── Tab Toggle ── */}
-                <div className="glass" style={styles.tabsContainer}>
+                <div style={styles.tabsContainer}>
                     {[
                         { id: 'compare', label: 'Health Comparison', icon: '👥' },
                         { id: 'simulate', label: 'Exposure Simulator', icon: '🎛️' },
@@ -307,19 +304,9 @@ const styles = {
     container: {
         position: 'relative',
         minHeight: '100vh',
-        background: '#030712',
-        color: '#f8fafc',
+        background: 'var(--bg)',
+        color: 'var(--text)',
         overflowX: 'hidden',
-    },
-    ambientBlob: {
-        position: 'fixed',
-        top: '20%',
-        left: '50%',
-        transform: 'translateX(-50%)',
-        width: '60vw',
-        height: '60vw',
-        background: 'radial-gradient(circle, rgba(16, 185, 129, 0.03) 0%, transparent 70%)',
-        zIndex: 0,
     },
     page: {
         position: 'relative',
@@ -343,14 +330,14 @@ const styles = {
     logoBadge: {
         width: '40px',
         height: '40px',
-        background: '#10b981',
+        background: 'var(--accent)',
         borderRadius: '12px',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         fontSize: '0.8rem',
         fontWeight: '900',
-        color: '#030712',
+        color: '#FFFFFF',
     },
     logo: {
         fontSize: '1.5rem',
@@ -359,12 +346,14 @@ const styles = {
     },
     tagline: {
         fontSize: '0.8rem',
-        color: '#64748b',
+        color: 'var(--text-dim)',
         margin: 0,
     },
     tabsContainer: {
         display: 'flex',
         padding: '6px',
+        background: 'var(--surface2)',
+        border: '1px solid var(--border)',
         borderRadius: '16px',
         marginBottom: '2.5rem',
         gap: '6px',
@@ -375,7 +364,7 @@ const styles = {
         borderRadius: '12px',
         border: 'none',
         background: 'transparent',
-        color: '#94a3b8',
+        color: 'var(--text-dim)',
         fontSize: '0.9rem',
         fontWeight: '600',
         cursor: 'pointer',
@@ -385,9 +374,10 @@ const styles = {
         justifyContent: 'center',
     },
     tabActive: {
-        background: '#10b981',
-        color: '#030712',
-        boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)',
+        background: 'var(--surface)',
+        color: 'var(--text)',
+        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)',
+        border: '1px solid var(--border)',
     },
     infoCard: {
         marginBottom: '2rem',
@@ -399,19 +389,19 @@ const styles = {
         flexWrap: 'wrap',
     },
     metricPill: {
-        background: 'rgba(30, 41, 59, 0.5)',
-        border: '1px solid rgba(51, 65, 85, 0.3)',
+        background: 'var(--surface2)',
+        border: '1px solid var(--border)',
         borderRadius: '10px',
         padding: '8px 16px',
         fontSize: '0.85rem',
-        color: '#94a3b8',
+        color: 'var(--text-dim)',
         display: 'flex',
         gap: '8px',
-        fontWeight: '500',
+        fontWeight: '600',
     },
     infoText: {
         fontSize: '0.9rem',
-        color: '#64748b',
+        color: 'var(--text-dim)',
         lineHeight: '1.6',
     },
     tableWrap: {
@@ -427,15 +417,15 @@ const styles = {
         padding: '12px 16px',
         fontSize: '0.65rem',
         textTransform: 'uppercase',
-        color: '#64748b',
+        color: 'var(--text-dim)',
         letterSpacing: '1px',
-        borderBottom: '1px solid rgba(51, 65, 85, 0.3)',
+        borderBottom: '1px solid var(--border)',
     },
     td: {
         padding: '16px',
         fontSize: '0.9rem',
-        color: '#f8fafc',
-        borderBottom: '1px solid rgba(51, 65, 85, 0.1)',
+        color: 'var(--text)',
+        borderBottom: '1px solid var(--border)',
     },
     tr: {
         transition: 'background 0.2s ease',
@@ -457,7 +447,7 @@ const styles = {
     },
     barTrack: {
         height: '8px',
-        background: 'rgba(30, 41, 59, 0.5)',
+        background: 'var(--border)',
         borderRadius: '6px',
         overflow: 'hidden',
     },
@@ -472,7 +462,7 @@ const styles = {
     },
     simSub: {
         fontSize: '0.9rem',
-        color: '#64748b',
+        color: 'var(--text-dim)',
         marginTop: '0.5rem',
     },
     hourDisplay: {
@@ -481,7 +471,7 @@ const styles = {
     hourNum: {
         fontSize: '3rem',
         fontWeight: '800',
-        color: '#10b981',
+        color: 'var(--accent)',
         fontFamily: "'Outfit', sans-serif",
         lineHeight: 1,
     },
@@ -489,7 +479,7 @@ const styles = {
         display: 'block',
         fontSize: '0.7rem',
         fontWeight: '700',
-        color: '#64748b',
+        color: 'var(--text-dim)',
         letterSpacing: '2px',
     },
     sliderContainer: {
@@ -498,17 +488,17 @@ const styles = {
     rangeInput: {
         width: '100%',
         height: '6px',
-        background: 'rgba(30, 41, 59, 0.5)',
+        background: 'var(--border)',
         borderRadius: '10px',
         outline: 'none',
         WebkitAppearance: 'none',
-        accentColor: '#10b981',
+        accentColor: 'var(--accent)',
     },
     sliderLabels: {
         display: 'flex',
         justifyContent: 'space-between',
         fontSize: '0.7rem',
-        color: '#475569',
+        color: 'var(--text-dim)',
         marginTop: '10px',
         fontWeight: '600',
     },
@@ -525,7 +515,7 @@ const styles = {
     },
     simMetricLabel: {
         fontSize: '0.7rem',
-        color: '#64748b',
+        color: 'var(--text-dim)',
         fontWeight: '600',
         textTransform: 'uppercase',
     },
@@ -539,22 +529,22 @@ const styles = {
         gridTemplateColumns: '1fr 1fr',
         gap: '10px',
         paddingTop: '1rem',
-        borderTop: '1px solid rgba(51, 65, 85, 0.2)',
+        borderTop: '1px solid var(--border)',
     },
     miniMetric: {
         display: 'flex',
         flexDirection: 'column',
         gap: '2px',
         fontSize: '0.7rem',
-        color: '#64748b',
+        color: 'var(--text-dim)',
     },
     warningBox: {
         marginTop: '1rem',
-        background: 'rgba(239, 68, 68, 0.1)',
+        background: 'rgba(239, 68, 68, 0.08)',
         padding: '8px',
         borderRadius: '8px',
         fontSize: '0.75rem',
-        color: '#ef4444',
+        color: '#EF4444',
         fontWeight: '600',
         textAlign: 'center',
     },
@@ -562,12 +552,12 @@ const styles = {
         marginTop: '4rem',
         textAlign: 'center',
         paddingTop: '2rem',
-        borderTop: '1px solid rgba(51, 65, 85, 0.2)',
+        borderTop: '1px solid var(--border)',
     },
     footerText: {
         fontSize: '0.8rem',
-        color: '#475569',
-        fontFamily: "'Space Mono', monospace",
-        letterSpacing: '1px',
+        color: 'var(--text-dim)',
+        fontFamily: "var(--font-body)",
+        letterSpacing: '0.5px',
     }
 };

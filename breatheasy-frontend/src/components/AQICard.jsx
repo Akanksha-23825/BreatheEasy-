@@ -2,16 +2,18 @@ import { useEffect, useState } from 'react';
 import { getAQI } from '../api/api';
 
 const getRiskColor = (aqi) => {
-    if (aqi <= 50) return '#10b981'; // emerald
-    if (aqi <= 100) return '#f59e0b'; // amber
-    if (aqi <= 150) return '#f97316'; // orange
-    return '#ef4444'; // red
+    if (aqi <= 50) return '#22C55E'; // Good
+    if (aqi <= 100) return '#FACC15'; // Moderate
+    if (aqi <= 150) return '#FB923C'; // Unhealthy
+    if (aqi <= 200) return '#EF4444'; // Very Unhealthy
+    return '#7F1D1D'; // Hazardous
 };
 
 const getRiskLabel = (aqi) => {
-    if (aqi <= 50) return 'Healthy';
+    if (aqi <= 50) return 'Good';
     if (aqi <= 100) return 'Moderate';
     if (aqi <= 150) return 'Unhealthy';
+    if (aqi <= 200) return 'Very Unhealthy';
     return 'Hazardous';
 };
 
@@ -19,11 +21,22 @@ export default function AQICard({ city }) {
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
+    const [lastUpdated, setLastUpdated] = useState(null);
+
+    const fetchAQI = () => {
         getAQI(city)
-            .then(res => setData(res.data))
+            .then(res => {
+                setData(res.data);
+                setLastUpdated(new Date());
+            })
             .catch(console.error)
             .finally(() => setLoading(false));
+    };
+
+    useEffect(() => {
+        fetchAQI(); // Fetch immediately on mount
+        const interval = setInterval(fetchAQI, 5 * 60 * 1000); // Refresh every 5 minutes
+        return () => clearInterval(interval); // Cleanup on unmount
     }, [city]);
 
     if (loading) return <div className="card-premium">Loading AQI Data...</div>;
@@ -41,10 +54,20 @@ export default function AQICard({ city }) {
                 </div>
             </div>
 
+            {data.stale && (
+                <div style={styles.staleBanner}>
+                    ⚠ Sensor data delayed ({data.data_age_hours}h old) — WAQI station offline
+                </div>
+            )}
+
             <div style={styles.mainContent}>
                 <div style={{ ...styles.aqiNumber, color }}>{data.aqi}</div>
                 <div style={styles.location}>
-                    <span style={styles.pin}>📍</span> {data.city}
+                    <span style={styles.pin}>📍</span> {data.station || data.city}
+                </div>
+                <div style={styles.lastUpdated}>
+                    {data.data_time ? `Sensor: ${data.data_time.slice(11, 16)}` : (lastUpdated ? `Fetched ${lastUpdated.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : 'Live')}
+                    <button onClick={fetchAQI} style={styles.refreshBtn} title="Refresh AQI">↻</button>
                 </div>
             </div>
 
@@ -84,7 +107,7 @@ const styles = {
         padding: '1rem 0',
     },
     aqiNumber: {
-        fontSize: '5rem',
+        fontSize: '4.5rem',
         fontWeight: '800',
         lineHeight: 1,
         letterSpacing: '-2px',
@@ -92,15 +115,16 @@ const styles = {
     },
     location: {
         fontSize: '0.9rem',
-        color: '#94a3b8',
+        color: 'var(--text-dim)',
         marginTop: '0.5rem',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         gap: '4px',
+        fontWeight: '600',
     },
     pin: {
-        opacity: 0.7,
+        opacity: 0.8,
     },
     pollutants: {
         display: 'grid',
@@ -108,8 +132,8 @@ const styles = {
         gap: '0.75rem',
     },
     pollutant: {
-        background: 'rgba(30, 41, 59, 0.4)',
-        border: '1px solid rgba(51, 65, 85, 0.2)',
+        background: 'var(--surface2)',
+        border: '1px solid var(--border)',
         borderRadius: '12px',
         padding: '12px',
         display: 'flex',
@@ -118,7 +142,7 @@ const styles = {
     },
     pLabel: {
         fontSize: '0.7rem',
-        color: '#64748b',
+        color: 'var(--text-dim)',
         fontWeight: '600',
         textTransform: 'uppercase',
     },
@@ -130,10 +154,46 @@ const styles = {
     pVal: {
         fontSize: '1.1rem',
         fontWeight: '700',
-        color: '#f1f5f9',
+        color: 'var(--text)',
     },
     pUnit: {
         fontSize: '0.65rem',
-        color: '#64748b',
+        color: 'var(--text-dim)',
+    },
+    lastUpdated: {
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: '8px',
+        fontSize: '0.7rem',
+        color: 'var(--text-dim)',
+        marginTop: '6px',
+        fontWeight: '500',
+    },
+    refreshBtn: {
+        background: 'none',
+        border: '1px solid var(--border)',
+        borderRadius: '50%',
+        width: '20px',
+        height: '20px',
+        cursor: 'pointer',
+        fontSize: '0.85rem',
+        color: 'var(--text-dim)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: 0,
+        transition: 'all 0.2s ease',
+        lineHeight: 1,
+    },
+    staleBanner: {
+        background: 'rgba(245, 158, 11, 0.1)',
+        border: '1px solid rgba(245, 158, 11, 0.25)',
+        borderRadius: '10px',
+        padding: '8px 12px',
+        fontSize: '0.72rem',
+        color: '#f59e0b',
+        fontWeight: '600',
+        textAlign: 'center',
     },
 };
